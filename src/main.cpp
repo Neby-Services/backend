@@ -17,7 +17,9 @@ int main() {
 		std::string DB_PORT = std::string(std::getenv("DB_PORT"));
 
 		crow::SimpleApp app;
+
 		initialize_test_routes(app);
+
 		app.port(HTTP_PORT).multithreaded().run();
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
