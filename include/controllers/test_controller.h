@@ -4,7 +4,7 @@
 #include <format>
 #include <string>
 
-#include "../models/test_model.h"
+#include "models/test_model.h"
 
 class TestController {
 	public:

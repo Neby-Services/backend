@@ -4,9 +4,9 @@
 #include <pqxx/pqxx>
 #include <string>
 
-#include "./routes/auth_routes.h"
-#include "./routes/test_routes.h"
 #include "crow.h"
+#include "routes/auth_routes.h"
+#include "routes/test_routes.h"
 
 int main() {
 	try {

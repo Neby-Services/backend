@@ -1,4 +1,4 @@
-#include "test_model.h"
+#include "models/test_model.h"
 
 TestModel::TestModel(std::string time) : time(time) {}
 
