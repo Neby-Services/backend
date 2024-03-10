@@ -1,11 +1,12 @@
-#include <iostream>
 #include <cstdlib>
 #include <format>
-#include <string>
+#include <iostream>
 #include <pqxx/pqxx>
-#include "crow.h"
+#include <string>
 
+#include "./routes/auth_routes.h"
 #include "./routes/test_routes.h"
+#include "crow.h"
 
 int main() {
 	try {
@@ -27,6 +28,7 @@ int main() {
 			exit(1);
 		}
 
+		initialize_auth_routes(app, conn);
 		initialize_test_routes(app, conn);
 
 		app.port(HTTP_PORT).multithreaded().run();
