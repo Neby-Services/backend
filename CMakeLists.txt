@@ -12,4 +12,6 @@ find_library(PQ_LIB pq)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(backend ${SOURCES})
 
+target_include_directories(backend PUBLIC include)
+
 target_link_libraries(backend ${PQXX_LIB} ${PQ_LIB})
