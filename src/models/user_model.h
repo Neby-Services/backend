@@ -1,5 +1,5 @@
-#ifndef TEST_MODEL_H
-#define TEST_MODEL_H
+#ifndef USER_MODEL_H
+#define USER_MODEL_H
 
 #include <pqxx/pqxx>
 #include <string>
