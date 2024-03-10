@@ -1,14 +1,14 @@
 #ifndef TEST_MODEL_H
 #define TEST_MODEL_H
 
-#include <string>
 #include <pqxx/pqxx>
+#include <string>
 
 class TestModel {
-private:
+	private:
 	std::string time;
 
-public:
+	public:
 	TestModel(std::string time);
 
 	std::string getTime();

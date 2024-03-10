@@ -1,11 +1,11 @@
-#include <iostream>
 #include <cstdlib>
 #include <format>
-#include <string>
+#include <iostream>
 #include <pqxx/pqxx>
-#include "crow.h"
+#include <string>
 
 #include "./routes/test_routes.h"
+#include "crow.h"
 
 int main() {
 	try {
