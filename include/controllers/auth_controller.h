@@ -3,6 +3,7 @@
 #include <string>
 
 #include "crow.h"
+#include "models/user_model.h"
 
 class AuthController {
 	public:
