@@ -1,8 +1,8 @@
 #include "controllers/auth_controller.h"
 
-void UserController::create_user(pqxx::connection& db, const crow::request& req, crow::response& res) {
+void AuthController::register_user(pqxx::connection& db, const crow::request& req, crow::response& res) {
 	/* 	res.code = 200;
-	 auto y = crow::json::load(req.body);
+		auto y = crow::json::load(req.body);
 
 		crow::json::wvalue x({{"message", "Hello, World!"}});
 		x["message2"] = "Hello!";

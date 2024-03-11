@@ -1,4 +1,4 @@
-#include "../../include/controllers/test_controller.h"
+#include "controllers/test_controller.h"
 
 std::string TestController::index(pqxx::connection& db) {
 	try {

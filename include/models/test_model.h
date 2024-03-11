@@ -1,6 +1,3 @@
-#ifndef TEST_MODEL_H
-#define TEST_MODEL_H
-
 #include <pqxx/pqxx>
 #include <string>
 
@@ -15,5 +12,3 @@ class TestModel {
 
 	static TestModel timeNow(pqxx::connection& db);
 };
-
-#endif

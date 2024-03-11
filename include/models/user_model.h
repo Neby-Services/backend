@@ -1,6 +1,3 @@
-#ifndef USER_MODEL_H
-#define USER_MODEL_H
-
 #include <pqxx/pqxx>
 #include <string>
 
@@ -19,7 +16,5 @@ class UserModel {
 
 	std::string getId();
 
-	static UserModel NewUser(std::string password, std::string email, std::string username, std::string image_url, std::string type);
+	static UserModel create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type);
 };
-
-#endif
