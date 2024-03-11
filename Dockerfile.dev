@@ -10,6 +10,15 @@ RUN dpkg -i crow-v1.0+5.deb
 
 COPY . .
 
+RUN cd libbcrypt && \
+	mkdir build && \ 
+	cd build && \ 
+	cmake .. && \
+    make && \
+    make install && \
+    ldconfig
+
+
 RUN chmod 777 hot-reload.sh
 
 CMD ["./hot-reload.sh"]
