@@ -1,5 +1,7 @@
 #include "models/user_model.h"
 
+#include <iostream>
+
 UserModel::UserModel(std::string id) : _id(id) {}
 
 std::string UserModel::getId() {
@@ -16,4 +18,20 @@ UserModel UserModel::create_user(pqxx::connection& db, std::string password, std
 	std::string res = result[0][0].as<std::string>();
 	txn.commit();
 	return UserModel(res);
+}
+
+bool UserModel::user_exist(pqxx::connection& db, std::string email) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("SELECT username FROM users WHERE email = $1", email);
+
+		bool userExists = !result.empty() && !result[0][0].is_null();
+
+		txn.commit();
+
+		return userExists;
+	} catch (const std::exception& e) {
+		return false;
+	}
 }

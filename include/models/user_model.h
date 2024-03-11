@@ -17,4 +17,6 @@ class UserModel {
 	std::string getId();
 
 	static UserModel create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type);
+	static bool user_exist(pqxx::connection& db, std::string email);
+
 };
