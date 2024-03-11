@@ -1,6 +1,6 @@
 FROM gcc:latest
 
-RUN apt-get update && apt-get install -y libpqxx-dev libboost-dev cmake inotify-tools
+RUN apt-get update && apt-get install -y libpqxx-dev libboost-dev cmake inotify-tools git 
 
 WORKDIR /app
 
@@ -10,7 +10,8 @@ RUN dpkg -i crow-v1.0+5.deb
 
 COPY . .
 
-RUN cd libbcrypt && \
+RUN git clone https://github.com/trusch/libbcrypt.git && \
+ cd libbcrypt && \
 	mkdir build && \ 
 	cd build && \ 
 	cmake .. && \
