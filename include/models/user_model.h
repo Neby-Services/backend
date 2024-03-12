@@ -1,3 +1,6 @@
+#ifndef USER_MODEL_h
+#define USER_MODEL_h
+
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
@@ -27,3 +30,5 @@ class UserModel {
 	static bool username_exist(pqxx::connection& db, std::string username);
 	static std::vector<UserModel> get_users(pqxx::connection& db);
 };
+
+#endif
