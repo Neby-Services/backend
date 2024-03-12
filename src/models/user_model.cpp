@@ -35,3 +35,19 @@ bool UserModel::user_exist(pqxx::connection& db, std::string email) {
 		return false;
 	}
 }
+
+bool UserModel::username_exist(pqxx::connection& db, std::string username) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("SELECT email FROM users WHERE username = $1", username);
+
+		bool usernameExists = !result.empty() && !result[0][0].is_null();
+
+		txn.commit();
+
+		return usernameExists;
+	} catch (const std::exception& e) {
+		return false;
+	}
+}
