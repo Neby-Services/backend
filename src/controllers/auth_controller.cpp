@@ -3,9 +3,12 @@
 #include <string>
 
 #include "bcrypt/BCrypt.hpp"
+#include "utils/user_validations.h"
 
 void AuthController::register_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
+		if (!is_correct_body(req, res)) return;
+
 		crow::json::rvalue body = crow::json::load(req.body);
 
 		std::string password = body["password"].s();
@@ -17,7 +20,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 		if (UserModel::user_exist(db, email)) {
 			res.code = 400;
-			crow::json::wvalue error({{"error", "user already exists"}});
+			crow::json::wvalue error({{"error", "email already exists"}});
 			res.write(error.dump());
 			res.end();
 			return;

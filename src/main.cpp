@@ -9,6 +9,8 @@
 #include "routes/test_routes.h"
 #include "routes/user_routes.h"
 
+#include "utils/common.h"
+
 int main() {
 	try {
 		int HTTP_PORT = std::stoi(std::getenv("HTTP_PORT"));
@@ -18,7 +20,7 @@ int main() {
 		std::string DB_HOST = std::string(std::getenv("DB_HOST"));
 		std::string DB_PORT = std::string(std::getenv("DB_PORT"));
 
-		crow::SimpleApp app;
+		NebyApp app;
 		std::string connection_string = std::format("dbname={} user={} password={} host={} port={}", DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT);
 		pqxx::connection conn(connection_string);
 
@@ -30,7 +32,9 @@ int main() {
 		}
 
 		initialize_auth_routes(app, conn);
+		
 		initialize_test_routes(app, conn);
+
 		initialize_user_routes(app, conn);
 
 		app.port(HTTP_PORT).multithreaded().run();
