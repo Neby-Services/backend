@@ -1,3 +1,6 @@
+#ifndef TEST_CONTROLLER_h
+#define TEST_CONTROLLER_h
+
 #include <format>
 #include <string>
 
@@ -7,3 +10,5 @@ class TestController {
 	public:
 	static std::string index(pqxx::connection& db);
 };
+
+#endif
