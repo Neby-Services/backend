@@ -1,6 +1,6 @@
 #include "routes/test_routes.h"
 
-void initialize_test_routes(crow::SimpleApp& app, pqxx::connection& db) {
+void initialize_test_routes(NebyApp& app, pqxx::connection& db) {
 	CROW_ROUTE(app, "/api/test")
 	([&db](const crow::request& req, crow::response& res) {
 		res.code = 200;
