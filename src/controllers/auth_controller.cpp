@@ -4,10 +4,8 @@
 
 #include "bcrypt/BCrypt.hpp"
 
-void AuthController::register_user(pqxx::connection &db, const crow::request &req, crow::response &res)
-{
-	try
-	{
+void AuthController::register_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 
 		std::string password = body["password"].s();
@@ -17,8 +15,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 		std::string hash = BCrypt::generateHash(password);
 
-		if (UserModel::user_exist(db, email))
-		{
+		if (UserModel::user_exist(db, email)) {
 			res.code = 400;
 			crow::json::wvalue error({{"error", "user already exists"}});
 			res.write(error.dump());
@@ -26,8 +23,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			return;
 		}
 
-		if (UserModel::username_exist(db, username))
-		{
+		if (UserModel::username_exist(db, username)) {
 			res.code = 400;
 			crow::json::wvalue error({{"error", "username already exists"}});
 			res.write(error.dump());
@@ -41,9 +37,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		res.code = 200;
 		res.write(data.dump());
 		res.end();
-	}
-	catch (const std::exception &e)
-	{
+	} catch (const std::exception &e) {
 		std::cerr << "Error in register_user: " << e.what() << std::endl;
 		res.code = 500;
 		crow::json::wvalue error({{"error", "internal server error"}});
