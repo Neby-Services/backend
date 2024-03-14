@@ -1,5 +1,7 @@
 #include "controllers/auth_controller.h"
 
+#include <utils/auth.h>
+
 #include <string>
 
 #include "bcrypt/BCrypt.hpp"
@@ -36,7 +38,10 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 		UserModel user = UserModel::create_user(db, hash, email, username, "", 0, type);
 
-		crow::json::wvalue data({{"id", user.getId()}});
+		std::string token = create_token(user.getId());
+
+		// crow::json::wvalue data({{"id", user.getId()}});
+		crow::json::wvalue data({{"token", token}});
 		res.code = 200;
 		res.write(data.dump());
 		res.end();
