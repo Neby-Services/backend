@@ -7,6 +7,7 @@ WORKDIR /app
 COPY . .
 
 RUN	cd test_setup && \ 
+	git submodule add https://github.com/nlohmann/json.git extern/json && \ 
 	git submodule add https://github.com/google/googletest.git extern/googletest &&\ 
 	git submodule add https://github.com/whoshuu/cpr.git extern/cpr && \
 	ldconfig

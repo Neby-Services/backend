@@ -1,15 +1,5 @@
-#include <gtest/gtest.h>
-
 #include <iostream>
-// Incluye tus archivos de prueba aquí
-// ...
-
-
-
-TEST(ddd, a) {
-    EXPECT_EQ(5+5, 5);
-}
-
+#include <gtest/gtest.h>
 
 int main(int argc, char** argv) {
     // Inicializa Google Test
