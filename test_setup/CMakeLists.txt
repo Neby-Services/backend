@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 # Encuentra las bibliotecas necesarias
 add_subdirectory(extern/cpr)
 add_subdirectory(extern/googletest)
+add_subdirectory(extern/json)
 
 # Si bcrypt está instalado en un lugar no estándar, puedes usar find_path para encontrar la carpeta de inclusión
 # find_path(BCRYPT_INCLUDE_DIR bcrypt/bcrypt.h)
@@ -24,7 +25,7 @@ add_executable(test ${SOURCES})
 target_include_directories(test PUBLIC include)
 
 # Enlaza las bibliotecas necesarias
-target_link_libraries(test gtest gtest_main cpr)
+target_link_libraries(test gtest gtest_main cpr nlohmann_json::nlohmann_json)
 
 # Si bcrypt está en un lugar no estándar, también agrega el directorio de inclusión
 # target_include_directories(backend PUBLIC ${BCRYPT_INCLUDE_DIR})
