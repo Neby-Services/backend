@@ -42,33 +42,17 @@ UserModel UserModel::create_user(pqxx::connection& db, std::string password, std
 	return UserModel(res);
 }
 
-bool UserModel::user_exist(pqxx::connection& db, std::string email) {
+bool UserModel::user_exist(pqxx::connection& db, std::string email, std::string username) {
 	try {
 		pqxx::work txn(db);
 
-		pqxx::result result = txn.exec_params("SELECT username FROM users WHERE email = $1", email);
+		pqxx::result result = txn.exec_params("SELECT username FROM users WHERE email = $1 OR username = $2", email, username);
 
 		bool userExists = !result.empty() && !result[0][0].is_null();
 
 		txn.commit();
 
 		return userExists;
-	} catch (const std::exception& e) {
-		return false;
-	}
-}
-
-bool UserModel::username_exist(pqxx::connection& db, std::string username) {
-	try {
-		pqxx::work txn(db);
-
-		pqxx::result result = txn.exec_params("SELECT email FROM users WHERE username = $1", username);
-
-		bool usernameExists = !result.empty() && !result[0][0].is_null();
-
-		txn.commit();
-
-		return usernameExists;
 	} catch (const std::exception& e) {
 		return false;
 	}

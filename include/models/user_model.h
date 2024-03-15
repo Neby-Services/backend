@@ -26,8 +26,7 @@ class UserModel {
 	std::string getType();
 
 	static UserModel create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type);
-	static bool user_exist(pqxx::connection& db, std::string email);
-	static bool username_exist(pqxx::connection& db, std::string username);
+	static bool user_exist(pqxx::connection& db, std::string email, std::string ussername);
 	static std::vector<UserModel> get_users(pqxx::connection& db);
 };
 

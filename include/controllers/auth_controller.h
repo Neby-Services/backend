@@ -1,9 +1,10 @@
 #include <format>
 #include <pqxx/pqxx>
 #include <string>
-
 #include "crow.h"
+
 #include "models/user_model.h"
+#include <utils/utils.h>
 
 class AuthController {
 	public:
