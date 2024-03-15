@@ -25,7 +25,7 @@ bool is_correct_body(const crow::request &req, crow::response &res) {
 
 bool validate_email(const std::string &email, crow::response &res) {
 	if (!is_correct_email(email)) {
-		handle_error(res, "incorrect email");
+		handle_error(res, "incorrect email", 400);
 		return false;
 	}
 	return true;
@@ -33,7 +33,7 @@ bool validate_email(const std::string &email, crow::response &res) {
 
 bool validate_type(const std::string &type, crow::response &res) {
 	if (!is_correct_type(type)) {
-		handle_error(res, "incorrect type user");
+		handle_error(res, "incorrect type user", 400);
 		return false;
 	}
 	return true;
@@ -41,7 +41,7 @@ bool validate_type(const std::string &type, crow::response &res) {
 
 bool validate_password(const std::string &password, crow::response &res) {
 	if (!is_correct_password(password)) {
-		handle_error(res, "incorrect password");
+		handle_error(res, "incorrect password", 400);
 		return false;
 	}
 	return true;
@@ -49,7 +49,7 @@ bool validate_password(const std::string &password, crow::response &res) {
 
 bool validate_username(const std::string &username, crow::response &res) {
 	if (!is_correct_username(username)) {
-		handle_error(res, "incorrect username");
+		handle_error(res, "incorrect username", 400);
 		return false;
 	}
 	return true;

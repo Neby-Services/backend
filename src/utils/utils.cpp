@@ -7,9 +7,9 @@ void handle_exception(crow::response &res, const std::string &error_message) {
 	res.end();
 }
 
-void handle_error(crow::response &res, const std::string &error_message) {
+void handle_error(crow::response &res, const std::string &error_message, const int &status_code) {
 	crow::json::wvalue error({{"error", error_message}});
-	res.code = 400;
+	res.code = status_code;
 	res.write(error.dump());
 	res.end();
 }
