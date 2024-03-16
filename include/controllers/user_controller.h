@@ -1,3 +1,5 @@
+#pragma once
+
 #include <format>
 #include <pqxx/pqxx>
 #include <string>

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <jwt-cpp/jwt.h>
 
 #include <string>

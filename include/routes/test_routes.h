@@ -1,3 +1,5 @@
+#pragma once
+
 #include <pqxx/pqxx>
 
 #include "controllers/test_controller.h"

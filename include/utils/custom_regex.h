@@ -1,15 +1,16 @@
-// custom_regex.h
-#include <regex>
-#include <string>
-#include <cctype>
-#include <iostream>
-#include <set>
+#pragma once
 
 #include <utils/common.h>
 
+#include <cctype>
+#include <iostream>
+#include <regex>
+#include <set>
+#include <string>
+
 bool is_correct_email(std::string email);
 
-bool is_correct_type(std::string type) ;
+bool is_correct_type(std::string type);
 
 bool is_correct_password(std::string password);
 
