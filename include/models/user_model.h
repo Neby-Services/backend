@@ -1,5 +1,4 @@
-#ifndef USER_MODEL_h
-#define USER_MODEL_h
+#pragma once
 
 #include <pqxx/pqxx>
 #include <string>
@@ -29,5 +28,3 @@ class UserModel {
 	static bool user_exist(pqxx::connection& db, std::string email, std::string ussername);
 	static std::vector<UserModel> get_users(pqxx::connection& db);
 };
-
-#endif

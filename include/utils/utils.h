@@ -1,6 +1,8 @@
-#include <crow.h>
+#pragma once
 
 #include <string>
+
+#include "crow.h"
 
 void handle_exception(crow::response &res, const std::string &error_message);
 

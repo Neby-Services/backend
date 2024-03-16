@@ -6,9 +6,7 @@
 
 #include "crow.h"
 #include "routes/auth_routes.h"
-#include "routes/test_routes.h"
 #include "routes/user_routes.h"
-
 #include "utils/common.h"
 
 int main() {
@@ -32,9 +30,6 @@ int main() {
 		}
 
 		initialize_auth_routes(app, conn);
-		
-		initialize_test_routes(app, conn);
-
 		initialize_user_routes(app, conn);
 
 		app.port(HTTP_PORT).multithreaded().run();
