@@ -32,7 +32,7 @@ kill_backend() {
 }
 
 main() {
-	cd test_setup/
+	cd test/
 	compile_backend
 	run_backend
 	monitor_changes
