@@ -75,3 +75,16 @@ std::vector<UserModel> UserModel::get_users(pqxx::connection& db) {
 
 	return all_users;
 }
+
+void UserModel::set_community_id(pqxx::connection &db , std::string community_id, std::string user_id) {
+	try {
+		pqxx::work txn(db);
+
+		// Actualizar el community_id del usuario en la base de datos
+		txn.exec_params("UPDATE users SET community_id = $1 WHERE id = $2", community_id, user_id);
+
+		txn.commit();
+	} catch (const std::exception& e) {
+		std::cerr << "Error al establecer el community_id para el usuario " << user_id << ": " << e.what() << std::endl;
+	}
+}

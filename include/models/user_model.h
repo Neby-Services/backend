@@ -27,4 +27,5 @@ class UserModel {
 	static UserModel create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type);
 	static bool user_exist(pqxx::connection& db, std::string email, std::string ussername);
 	static std::vector<UserModel> get_users(pqxx::connection& db);
+	static void set_community_id(pqxx::connection& db, std::string community_id, std::string user_id);
 };
