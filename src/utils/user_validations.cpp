@@ -1,6 +1,6 @@
 #include "utils/user_validations.h"
 
-bool is_correct_body(const crow::request &req, crow::response &res) {
+bool is_correct_body_register(const crow::request &req, crow::response &res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 
@@ -13,6 +13,20 @@ bool is_correct_body(const crow::request &req, crow::response &res) {
 			!validate_password(body["password"].s(), res) ||
 			!validate_username(body["username"].s(), res)) {
 			return false;
+		}
+
+		if (body["type"].s() == Roles::ADMIN) {
+			const std::vector<std::string> required_field = {"community_name"};
+			if (!validate_required_body_fields(body, required_field, res)) {
+				handle_error(res, "missing community_name", 404);
+				return false;
+			}
+		} else if (body["type"] == Roles::NEIGHBOR) {
+			const std::vector<std::string> required_field = {"community_code"};
+			if (!validate_required_body_fields(body, required_field, res)) {
+				handle_error(res, "missing community_code", 404);
+				return false;
+			}
 		}
 
 		return true;

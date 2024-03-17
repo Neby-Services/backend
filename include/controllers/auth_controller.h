@@ -1,5 +1,8 @@
 #pragma once
 
+#include <models/community_model.h>
+#include <utils/common.h>
+
 #include <format>
 #include <pqxx/pqxx>
 #include <string>

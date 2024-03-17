@@ -9,7 +9,7 @@
 
 #include "crow.h"
 
-bool is_correct_body(const crow::request &req, crow::response &res);
+bool is_correct_body_register(const crow::request &req, crow::response &res);
 
 bool validate_email(const std::string &email, crow::response &res);
 
