@@ -1,5 +1,23 @@
 #include "utils/user_validations.h"
 
+bool is_correct_body_login(const crow::request &req, crow::response &res) {
+	try {
+		crow::json::rvalue body = crow::json::load(req.body);
+
+		const std::vector<std::string> required_fields = {"email", "password"};
+
+		if (!validate_required_body_fields(body, required_fields, res)) return false;
+
+		if (!validate_email(body["email"].s(), res) || !validate_password(body["password"].s(), res))
+			return false;
+
+		return true;
+	} catch (const std::exception &e) {
+		handle_exception(res, "login validation data error");
+		return false;
+	}
+}
+
 bool is_correct_body_register(const crow::request &req, crow::response &res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);

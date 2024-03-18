@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
@@ -28,4 +29,7 @@ class UserModel {
 	static bool user_exist(pqxx::connection& db, std::string email, std::string ussername);
 	static std::vector<UserModel> get_users(pqxx::connection& db);
 	static void set_community_id(pqxx::connection& db, std::string community_id, std::string user_id);
+
+	static std::unique_ptr<UserModel> get_user_by_email(pqxx::connection& db, std::string email);
+	static std::string get_password_by_email(pqxx::connection& db, std::string email);
 };
