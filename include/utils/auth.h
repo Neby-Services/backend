@@ -4,5 +4,5 @@
 
 #include <string>
 
-std::string create_token(const std::string& userId);
+std::string create_token(const std::string& userId, const std::string& type);
 bool validate_token(const std::string& token);

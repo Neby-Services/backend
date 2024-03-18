@@ -41,16 +41,71 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			std::string community_id = CommunityModel::get_community_id(db, community_code);
 			if (community_id == "") {
 				handle_error(res, "not community exist", 404);
+				return;
 			}
 			UserModel::set_community_id(db, community_id, user.getId());
 		}
 
-		std::string token = create_token(user.getId());
+		std::string token = create_token(user.getId(), type);
 
-		crow::json::wvalue data({{"token", token}});
-		res.code = 200;
+		std::string token_cookie = "token=" + token;
+
+		res.add_header("Set-Cookie", token_cookie);
+
+		crow::json::wvalue data;
+		data["user"] = {
+			{"id", user.getId()},
+		};
+
+		res.code = 201;
 		res.write(data.dump());
 		res.end();
+	} catch (const std::exception &e) {
+		std::cerr << "Error in register_user: " << e.what() << std::endl;
+		handle_error(res, "INTERNAL SERVER ERROR", 500);
+	}
+}
+
+void AuthController::login_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
+		if (!is_correct_body_login(req, res)) return;
+		
+		crow::json::rvalue body = crow::json::load(req.body);
+
+		std::string email = body["email"].s();
+
+		std::unique_ptr<UserModel> user = UserModel::get_user_by_email(db, email);
+
+		if (!user) {
+			handle_error(res, "user by email not exist", 404);
+			return;
+		}
+
+		const std::string encrypt_password = UserModel::get_password_by_email(db, email);
+
+		std::string password = body["password"].s();
+
+		if (BCrypt::validatePassword(password, encrypt_password)) {
+			std::string token = create_token(user.get()->getId(), user.get()->getType());
+
+			std::string token_cookie = "token=" + token;
+
+			res.add_header("Set-Cookie", token_cookie);
+
+			crow::json::wvalue data;
+			data["user"] = {
+				{"id", user.get()->getId()},
+				{"type", user.get()->getType()}};
+
+			res.code = 200;
+			res.write(data.dump());
+
+			res.end();
+		} else {
+			handle_error(res, "password invalid", 401);
+			return;
+		}
+
 	} catch (const std::exception &e) {
 		std::cerr << "Error in register_user: " << e.what() << std::endl;
 		handle_error(res, "INTERNAL SERVER ERROR", 500);

@@ -11,6 +11,8 @@
 
 bool is_correct_body_register(const crow::request &req, crow::response &res);
 
+bool is_correct_body_login(const crow::request &req, crow::response &res);
+
 bool validate_email(const std::string &email, crow::response &res);
 
 bool validate_type(const std::string &type, crow::response &res);

@@ -4,6 +4,7 @@
 #include <utils/common.h>
 
 #include <format>
+#include <memory>
 #include <pqxx/pqxx>
 #include <string>
 
@@ -14,4 +15,5 @@
 class AuthController {
 	public:
 	static void register_user(pqxx::connection& db, const crow::request& req, crow::response& res);
+	static void login_user(pqxx::connection& db, const crow::request& req, crow::response& res);
 };
