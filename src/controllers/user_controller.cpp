@@ -52,9 +52,16 @@ void UserController::get_user_by_id(pqxx::connection &db, const crow::request &r
 		res.write(data.dump());
 		res.end();
 
-	} catch (const std::exception &e) {
-		std::cerr << "Error: " << e.what() << std::endl;
-		res.code = 500;
-		res.end();
+	} catch (const pqxx::data_exception &e) {
+		handle_error(res, "invalid id", 400);
+	}
+
+	catch (const data_not_found_exception &e) {
+		handle_error(res, e.what(), 404);
+	}
+
+	catch (const std::exception &e) {
+		handle_error(res, e.what(), 500);
 	}
 }
+
