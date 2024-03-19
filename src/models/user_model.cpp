@@ -134,3 +134,14 @@ std::string UserModel::get_password_by_email(pqxx::connection& db, std::string e
 		return "";
 	}
 }
+
+UserModel UserModel::get_user_by_id(pqxx::connection& db, const std::string& id) {
+	pqxx::work txn(db);
+	pqxx::result result = txn.exec_params("SELECT id, email, username, image_url, balance, type FROM users WHERE id = $1", id);
+
+	const auto& row = result[0];
+	UserModel user(row["id"].as<std::string>(), row["email"].as<std::string>(), row["username"].as<std::string>(), row["image_url"].as<std::string>(), row["balance"].as<int>(), row["type"].as<std::string>());
+
+	txn.commit();
+	return user;
+}

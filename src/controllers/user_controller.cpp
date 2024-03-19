@@ -26,3 +26,35 @@ void UserController::get_users(pqxx::connection &db, const crow::request &req, c
 		res.end();
 	}
 }
+
+void UserController::get_user_by_id(pqxx::connection &db, const crow::request &req, const std::string &user_id, crow::response &res) {
+	try {
+		if (user_id.empty()) {
+			res.code = 400;
+			crow::json::wvalue error({{"error", "id doesn't exist"}});
+			res.write(error.dump());
+			res.end();
+			return;
+		}
+
+		UserModel user = UserModel::get_user_by_id(db, user_id);
+
+		crow::json::wvalue user_data;
+		user_data["id"] = user.getId();
+		user_data["email"] = user.getEmail();
+		user_data["username"] = user.getUsername();
+		user_data["image_url"] = user.getImageUrl();
+		user_data["balance"] = user.getBalance();
+		user_data["type"] = user.getType();
+
+		crow::json::wvalue data{{"user", user_data}};
+		res.code = 200;
+		res.write(data.dump());
+		res.end();
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+		res.code = 500;
+		res.end();
+	}
+}
