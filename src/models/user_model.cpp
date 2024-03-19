@@ -143,3 +143,18 @@ UserModel UserModel::get_user_by_id(pqxx::connection& db, const std::string& id)
 	txn.commit();
 	return user;
 }
+
+bool UserModel::delete_by_id(pqxx::connection &db, const std::string& id) {
+    try {
+        pqxx::work txn(db);
+
+        pqxx::result result = txn.exec_params("DELETE FROM users WHERE id = $1", id);
+
+        txn.commit();
+
+        return true;
+    } catch (const std::exception &e) {
+        std::cerr << "Failed to delete user: " << e.what() << std::endl;
+        return false; 
+    }
+}

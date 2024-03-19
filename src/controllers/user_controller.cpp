@@ -65,3 +65,25 @@ void UserController::get_user_by_id(pqxx::connection &db, const crow::request &r
 	}
 }
 
+void UserController::delete_user_by_id(pqxx::connection &db, const std::string &user_id, crow::response &res) {
+	try {
+		bool elimin = UserModel::delete_by_id(db, user_id);
+
+		if (elimin) {
+			res.code = 200;
+			crow::json::wvalue response_message;
+			response_message["message"] = "User deleted successfully";
+			res.write(response_message.dump());
+		} else {
+			res.code = 404;
+			crow::json::wvalue error_message;
+			error_message["error"] = "User not found";
+			res.write(error_message.dump());
+		}
+		res.end();
+	} catch (const std::exception &e) {
+		std::cerr << "Error deleting user: " << e.what() << std::endl;
+		res.code = 500;
+		res.end();
+	}
+}

@@ -37,4 +37,5 @@ class UserModel {
 	static std::unique_ptr<UserModel> get_user_by_email(pqxx::connection& db, std::string email);
 	static std::string get_password_by_email(pqxx::connection& db, std::string email);
 	static UserModel get_user_by_id(pqxx::connection& db, const std::string& id);
+	static bool delete_by_id(pqxx::connection& db, const std::string& id);
 };
