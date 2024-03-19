@@ -1,7 +1,5 @@
 #include "models/user_model.h"
 
-#include <iostream>
-
 UserModel::UserModel(std::string id) : _id(id) {}
 
 UserModel::UserModel(std::string id, std::string email, std::string username, std::string image_url, int balance, std::string type) : _id(id), _email(email), _username(username), _image_url(image_url), _balance(balance), _type(type) {}
@@ -138,7 +136,7 @@ std::string UserModel::get_password_by_email(pqxx::connection& db, std::string e
 UserModel UserModel::get_user_by_id(pqxx::connection& db, const std::string& id) {
 	pqxx::work txn(db);
 	pqxx::result result = txn.exec_params("SELECT id, email, username, image_url, balance, type FROM users WHERE id = $1", id);
-
+	if(result.empty()) throw data_not_found_exception("user doesn't exist");
 	const auto& row = result[0];
 	UserModel user(row["id"].as<std::string>(), row["email"].as<std::string>(), row["username"].as<std::string>(), row["image_url"].as<std::string>(), row["balance"].as<int>(), row["type"].as<std::string>());
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <utils/errors.h>
+#include <utils/utils.h>
+
 #include <format>
 #include <pqxx/pqxx>
 #include <string>
