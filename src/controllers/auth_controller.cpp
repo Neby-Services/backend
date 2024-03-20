@@ -2,6 +2,8 @@
 
 #include <utils/auth.h>
 
+#include <ctime>  // Include the ctime header for time functions
+#include <iomanip>
 #include <string>
 
 #include "bcrypt/BCrypt.hpp"
@@ -46,11 +48,23 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			UserModel::set_community_id(db, community_id, user.getId());
 		}
 
-		std::string token = create_token(user.getId(), type);
+		std::string jwtToken = create_token(user.getId(), type);
+		int expirationTimeSeconds = 3600;
+		time_t now = time(0);
+		time_t expirationTime = now + expirationTimeSeconds;
 
-		std::string token_cookie = "token=" + token;
+		tm *expiration_tm = gmtime(&expirationTime);
+		char expirationTimeStr[128];
+		strftime(expirationTimeStr, 128, "%a, %d %b %Y %H:%M:%S GMT", expiration_tm);
 
-		res.add_header("Set-Cookie", token_cookie);
+		std::ostringstream cookieStream;
+		cookieStream << "token=" << jwtToken << "; ";
+		cookieStream << "Max-Age=" << expirationTimeSeconds << "; ";
+		cookieStream << "Expires=" << expirationTimeStr << "; ";
+		cookieStream << "Path=/api; ";
+		cookieStream << "Secure";
+
+		res.set_header("Set-Cookie", cookieStream.str());
 
 		crow::json::wvalue data;
 		data["user"] = {
@@ -68,8 +82,18 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 void AuthController::login_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
+		/* 	crow::json::rvalue body = crow::json::load(req.body);
+
+			std::string id = body["id"].s();
+
+			crow::json::wvalue data({{"id", id}});
+
+			res.code = 200;
+			res.write(data.dump());
+
+			res.end(); */
 		if (!is_correct_body_login(req, res)) return;
-		
+
 		crow::json::rvalue body = crow::json::load(req.body);
 
 		std::string email = body["email"].s();
@@ -86,11 +110,24 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 		std::string password = body["password"].s();
 
 		if (BCrypt::validatePassword(password, encrypt_password)) {
-			std::string token = create_token(user.get()->getId(), user.get()->getType());
+			std::string jwtToken = create_token(user.get()->getId(), user.get()->getType());
 
-			std::string token_cookie = "token=" + token;
+			int expirationTimeSeconds = 3600;
+			time_t now = time(0);
+			time_t expirationTime = now + expirationTimeSeconds;
 
-			res.add_header("Set-Cookie", token_cookie);
+			tm *expiration_tm = gmtime(&expirationTime);
+			char expirationTimeStr[128];
+			strftime(expirationTimeStr, 128, "%a, %d %b %Y %H:%M:%S GMT", expiration_tm);
+
+			std::ostringstream cookieStream;
+			cookieStream << "token=" << jwtToken << "; ";
+			cookieStream << "Max-Age=" << expirationTimeSeconds << "; ";
+			cookieStream << "Expires=" << expirationTimeStr << "; ";
+			cookieStream << "Path=/api; ";
+			cookieStream << "Secure";
+
+			res.set_header("Set-Cookie", cookieStream.str());
 
 			crow::json::wvalue data;
 			data["user"] = {
