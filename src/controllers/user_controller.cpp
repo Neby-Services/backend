@@ -26,3 +26,64 @@ void UserController::get_users(pqxx::connection &db, const crow::request &req, c
 		res.end();
 	}
 }
+
+void UserController::get_user_by_id(pqxx::connection &db, const crow::request &req, const std::string &user_id, crow::response &res) {
+	try {
+		if (user_id.empty()) {
+			res.code = 400;
+			crow::json::wvalue error({{"error", "id doesn't exist"}});
+			res.write(error.dump());
+			res.end();
+			return;
+		}
+
+		UserModel user = UserModel::get_user_by_id(db, user_id);
+
+		crow::json::wvalue user_data;
+		user_data["id"] = user.getId();
+		user_data["email"] = user.getEmail();
+		user_data["username"] = user.getUsername();
+		user_data["image_url"] = user.getImageUrl();
+		user_data["balance"] = user.getBalance();
+		user_data["type"] = user.getType();
+
+		crow::json::wvalue data{{"user", user_data}};
+		res.code = 200;
+		res.write(data.dump());
+		res.end();
+
+	} catch (const pqxx::data_exception &e) {
+		handle_error(res, "invalid id", 400);
+	}
+
+	catch (const data_not_found_exception &e) {
+		handle_error(res, e.what(), 404);
+	}
+
+	catch (const std::exception &e) {
+		handle_error(res, e.what(), 500);
+	}
+}
+
+void UserController::delete_user_by_id(pqxx::connection &db, const std::string &user_id, crow::response &res) {
+	try {
+		bool elimin = UserModel::delete_by_id(db, user_id);
+
+		if (elimin) {
+			res.code = 200;
+			crow::json::wvalue response_message;
+			response_message["message"] = "User deleted successfully";
+			res.write(response_message.dump());
+		} else {
+			res.code = 404;
+			crow::json::wvalue error_message;
+			error_message["error"] = "User not found";
+			res.write(error_message.dump());
+		}
+		res.end();
+	} catch (const std::exception &e) {
+		std::cerr << "Error deleting user: " << e.what() << std::endl;
+		res.code = 500;
+		res.end();
+	}
+}
