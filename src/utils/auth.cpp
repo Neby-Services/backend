@@ -29,18 +29,19 @@ bool validate_token(const std::string& token) {
 	}
 }
 
-std::string get_token_cookie( crow::request& req) {
+std::string get_token_cookie(crow::request& req) {
 	std::string tokenValue;
 
 	const auto& cookiesHeader = req.get_header_value("Cookie");
 
 	std::istringstream iss(cookiesHeader);
+
 	std::string cookie;
 	while (std::getline(iss, cookie, ';')) {
 		size_t pos = cookie.find("token=");
 		if (pos != std::string::npos) {
-			tokenValue = cookie.substr(pos + 6);  
-			return tokenValue;					
+			tokenValue = cookie.substr(pos + 6);
+			return tokenValue;
 		}
 	}
 
