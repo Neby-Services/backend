@@ -19,6 +19,7 @@ class UserModel {
 	std::string _type;
 
 	public:
+	UserModel();
 	UserModel(std::string id);
 	UserModel(std::string id, std::string email, std::string username, std::string image_url, int balance, std::string type);
 
