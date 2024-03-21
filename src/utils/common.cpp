@@ -9,3 +9,6 @@ const std::string NotificationStatus::REFUSED = "REFUSED";
 
 const std::string ServiceStatus::CLOSED = "CLOSED";
 const std::string ServiceStatus::OPEN = "OPEN";
+
+const std::string ServiceType::OFFERED = "OFFERED";
+const std::string ServiceType::REQUESTED = "REQUESTED";

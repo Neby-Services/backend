@@ -11,8 +11,6 @@ struct VerifyJWT : crow::ILocalMiddleware {
 	void before_handle(crow::request& req, crow::response& res, context& ctx) {
 		std::string token = get_token_cookie(req);
 
-		std::cout << "token -> " << token << std::endl;
-
 		if (!validate_token(token)) {
 			handle_error(res, "invalid token", 401);
 			return;
@@ -31,8 +29,6 @@ struct VerifyJWT : crow::ILocalMiddleware {
 				type = e.second.get<std::string>();
 			}
 		}
-
-		std::cout << "holaa -> " << req.body << std::endl;
 
 		if (req.body == "") {
 			crow::json::wvalue body;

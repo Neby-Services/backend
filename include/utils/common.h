@@ -24,3 +24,8 @@ struct ServiceStatus {
 	static const std::string OPEN;
 	static const std::string CLOSED;
 };
+
+struct ServiceType {
+	static const std::string OFFERED;
+	static const std::string REQUESTED;
+};
