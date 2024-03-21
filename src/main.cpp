@@ -1,3 +1,5 @@
+#include <routes/service_routes.h>
+
 #include <cstdlib>
 #include <format>
 #include <iostream>
@@ -31,6 +33,7 @@ int main() {
 
 		initialize_auth_routes(app, conn);
 		initialize_user_routes(app, conn);
+		initialize_service_routes(app, conn);
 
 		app.port(HTTP_PORT).multithreaded().run();
 		conn.disconnect();

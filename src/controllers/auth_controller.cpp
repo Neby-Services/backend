@@ -27,12 +27,15 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			return;
 		}
 
-		UserModel user = UserModel::create_user(db, hash, email, username, "", 0, type);
+		// UserModel user = UserModel::create_user(db, hash, email, username, "", 0, type);
+
+		UserModel user;
 
 		if (type == Roles::ADMIN) {
 			// ! check if community exist with name
 			std::string community_name = body["community_name"].s();
 			CommunityModel community = CommunityModel::create_community(db, community_name);
+			user = UserModel::create_user(db, hash, email, username, "", 0, type);
 			UserModel::set_community_id(db, community.get_id(), user.getId());
 
 		} else if (type == Roles::NEIGHBOR) {
@@ -45,6 +48,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 				handle_error(res, "not community exist", 404);
 				return;
 			}
+			user = UserModel::create_user(db, hash, email, username, "", 0, type);
 			UserModel::set_community_id(db, community_id, user.getId());
 		}
 

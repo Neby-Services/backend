@@ -9,8 +9,6 @@ struct VerifyJWT : crow::ILocalMiddleware {
 	struct context {};
 
 	void before_handle(crow::request& req, crow::response& res, context& ctx) {
-		crow::json::wvalue body = crow::json::load(req.body);
-
 		std::string token = get_token_cookie(req);
 
 		if (!validate_token(token)) {
@@ -25,7 +23,6 @@ struct VerifyJWT : crow::ILocalMiddleware {
 
 		// Acceder al payload del token decodificado
 		for (auto& e : decoded.get_payload_json()) {
-			std::cout << e.first << " = " << e.second << std::endl;
 			if (e.first == "id") {
 				id = e.second.get<std::string>();
 			} else if (e.first == "type") {
@@ -33,14 +30,21 @@ struct VerifyJWT : crow::ILocalMiddleware {
 			}
 		}
 
-		body["id"] = id;
-		if (type == "admin")
+		if (req.body == "") {
+			crow::json::wvalue body;
 
-			body["isAdmin"] = true;
-		else
-			body["isAdmin"] = false;
+			body["id"] = id;
+			body["isAdmin"] = (type == "admin");
 
-		req.body = body.dump();
+			req.body = body.dump();
+		} else {
+			crow::json::wvalue body = crow::json::load(req.body);
+
+			body["id"] = id;
+			body["isAdmin"] = (type == "admin");
+
+			req.body = body.dump();
+		}
 	}
 
 	void after_handle(crow::request& req, crow::response& res, context& ctx) {}

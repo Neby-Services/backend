@@ -1,5 +1,7 @@
 #pragma once
 
+#include <middlewares/verify_jwt.h>
+
 #include <pqxx/pqxx>
 
 #include "controllers/user_controller.h"
