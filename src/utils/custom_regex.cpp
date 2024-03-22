@@ -1,7 +1,7 @@
 #include <utils/custom_regex.h>
 
 bool is_correct_email(const std::string& email) {
-	static const std::regex pattern(R"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})");
+	static const std::regex pattern(R"([a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})");
 	static const std::regex doubleDotPattern(R"(.*\.\..*)");
 
 	// Verificar si hay dos puntos consecutivos en el email
@@ -64,7 +64,7 @@ bool is_correct_password(std::string password) {
 //** GOOD USERNAMES -> Usuario123, SecureUser1, AlphaBeta45, GoodPassword23, ValidUsername
 //** BAD USERNAMES -> Invalid!User, SpacesUser  , Short, LongUsernameWithTooManyCharacters, Invalid Spaces
 bool is_correct_username(std::string username) {
-	if (username.length() < 4 || username.length() > 30)
+	if (username.length() <= 5 || username.length() > 30)
 		return false;
 
 	for (char c : username) {

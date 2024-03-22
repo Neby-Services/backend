@@ -3,10 +3,45 @@
 
 #include <cstdlib>	// Para std::getenv
 #include <nlohmann/json.hpp>
+#include <pqxx/pqxx>
 #include <string>
 #include <vector>
 
 #include "common.h"
+
+// Declaración de la función limpiarTablaUsers
+void limpiarTablaUsers() {
+	try {
+		// Establecer la conexión a la base de datos
+		std::string connection_string = std::format("dbname={} user={} password={} host={} port={}", DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT);
+		pqxx::connection conn(connection_string);
+		// pqxx::connection conn("dbname=mydatabase user=myuser password=mypassword hostaddr=127.0.0.1 port=5432");
+
+		if (conn.is_open()) {
+			// Crear un objeto de transacción
+			pqxx::work txn(conn);
+
+			// Ejecutar la consulta para limpiar la tabla users
+			txn.exec("DELETE FROM users");
+			txn.exec("DELETE FROM communities");
+
+			// Confirmar la transacción
+			txn.commit();
+
+		} else {
+			std::cerr << "Error al conectar a la base de datos." << std::endl;
+		}
+	} catch (const std::exception& e) {
+		std::cerr << "Error de excepción: " << e.what() << std::endl;
+	}
+}
+class RegisterValidations : public ::testing::Test {
+	protected:
+	void TearDown() override {
+		// Llamar a la función limpiarTablaUsers después de que se complete el test
+		limpiarTablaUsers();
+	}
+};
 
 // ** ---------- MISSING FIELDS ON REQ.BODY TESTS ---------- ** \\
 
@@ -97,8 +132,41 @@ TEST(REGISTER_MISSING_FIELDS, MissingCommunityCode) {
 }
 
 // ** ---------- VALIDATION REQ.BODY FIELDS TESTS ---------- ** \\
+ 
+TEST_F(RegisterValidations, CorrectEmail) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-TEST(REGISTER_VALIDATIONS, IncorrectEmail) {
+	// Lista de direcciones de correo electrónico correctas
+	std::vector<std::string> correct_emails = {
+		"user@example.com",
+		"user123@example.com",
+		"user.name@example.com",
+		"user_name@example.com",
+		"user+name@example.com",
+		"user-name@example.com",
+		"user@example.co",
+		"user@example.co.uk",
+		"user@example.xyz"};
+
+	for (const auto& email : correct_emails) {
+		// Verificar que el correo electrónico sea correcto antes de enviar la solicitud
+		nlohmann::json post_data = {
+			{"email", email},
+			{"password", "F!sh1ngR0ck5"},
+			{"type", "admin"},
+			{"username", "example"},
+			{"community_name", "example_community_name"}};
+
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+		// Verificar que el servidor responda con el código de estado 201 (Created)
+		EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for correct email: " << email;
+		// Limpiar la tabla users después de cada prueba
+		limpiarTablaUsers();
+	}
+}
+
+TEST_F(RegisterValidations, IncorrectEmail) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	// Lista de direcciones de correo electrónico incorrectas
@@ -126,4 +194,123 @@ TEST(REGISTER_VALIDATIONS, IncorrectEmail) {
 
 		EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect email: " << email;
 	}
+}
+
+TEST_F(RegisterValidations, Correct_password) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	// Lista de direcciones de correo electrónico incorrectas
+	std::vector<std::string> incorrect_passwords = {
+		"Tr0ub4dor&3",
+		"P@ssw0rd!",
+		"S3cur3P@ss",
+		"B1gB@ngTh3ory",
+		"F!sh1ngR0ck5"};
+
+	for (const auto& password : incorrect_passwords) {
+		nlohmann::json post_data = {
+			{"email", "example@gmail.com"},
+			{"username", "example"},
+			{"password", password},
+			{"type", "admin"},
+			{"community_name", "example_community_name"}};
+
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+		EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for incorrect password: " << password;
+		limpiarTablaUsers();
+	}
+}
+
+TEST_F(RegisterValidations, Incorrect_Password) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	// Lista de direcciones de correo electrónico incorrectas
+	std::vector<std::string> incorrect_passwords = {
+		"password", "12345678", "qwerty", "letmein", "abc123"};
+
+	for (const auto& password : incorrect_passwords) {
+		nlohmann::json post_data = {
+			{"email", "example@gmail.com"},
+			{"username", "example"},
+			{"password", password},
+			{"type", "admin"},
+			{"community_name", "example_community_name"}};
+
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+		EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect password: " << password;
+	}
+}
+
+//** BAD USERNAMES -> Invalid!User, SpacesUser  , Short, LongUsernameWithTooManyCharacters, Invalid Spaces
+
+TEST_F(RegisterValidations, Incorrect_Username) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	// Lista de direcciones de correo electrónico incorrectas
+	std::vector<std::string> incorrect_usernames = {
+		"Invalid!User",
+		"SpacesUser ",
+		"Short",
+		"LongUsernameWithTooManyCharacters",
+		"Invalid Spaces"};
+
+	for (const auto& username : incorrect_usernames) {
+		nlohmann::json post_data = {
+			{"email", "example@gmail.com"},
+			{"username", username},
+			{"password", "P@ssw0rd!"},
+			{"type", "admin"},
+			{"community_name", "example_community_name"}};
+
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+		EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect username: " << username;
+	}
+}
+
+//** GOOD USERNAMES -> Usuario123, SecureUser1, AlphaBeta45, GoodPassword23, ValidUsername
+
+TEST_F(RegisterValidations, Correct_username) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	// Lista de direcciones de correo electrónico incorrectas
+	std::vector<std::string> incorrect_usernames = {
+		"SecureUser1",
+		"Usuario123",
+		"AlphaBeta45",
+		"GoodPassword23",
+		"ValidUsername"};
+
+	for (const auto& username : incorrect_usernames) {
+		nlohmann::json post_data = {
+			{"email", "example@gmail.com"},
+			{"username", username},
+			{"password", "P@ssw0rd!"},
+			{"type", "admin"},
+			{"community_name", "example_community_name"}};
+
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+		EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for incorrect username: " << username;
+		limpiarTablaUsers();
+	}
+}
+
+TEST_F(RegisterValidations, Incorrect_type) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	std::string incorrect_type = "type_error";
+
+	nlohmann::json post_data = {
+		{"email", "example@gmail.com"},
+		{"username", "example"},
+		{"password", "P@ssw0rd!"},
+		{"type", incorrect_type},
+		{"community_name", "example_community_name"}};
+
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+	EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect username: " << incorrect_type;
 }
