@@ -132,7 +132,7 @@ TEST(REGISTER_MISSING_FIELDS, MissingCommunityCode) {
 }
 
 // ** ---------- VALIDATION REQ.BODY FIELDS TESTS ---------- ** \\
- 
+
 TEST_F(RegisterValidations, CorrectEmail) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
@@ -243,8 +243,6 @@ TEST_F(RegisterValidations, Incorrect_Password) {
 	}
 }
 
-//** BAD USERNAMES -> Invalid!User, SpacesUser  , Short, LongUsernameWithTooManyCharacters, Invalid Spaces
-
 TEST_F(RegisterValidations, Incorrect_Username) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
@@ -269,8 +267,6 @@ TEST_F(RegisterValidations, Incorrect_Username) {
 		EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect username: " << username;
 	}
 }
-
-//** GOOD USERNAMES -> Usuario123, SecureUser1, AlphaBeta45, GoodPassword23, ValidUsername
 
 TEST_F(RegisterValidations, Correct_username) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
@@ -313,4 +309,106 @@ TEST_F(RegisterValidations, Incorrect_type) {
 	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
 	EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect username: " << incorrect_type;
+}
+
+// ** ---------- GENERAL ERRORS TESTS ---------- ** \\
+
+class RegisterGeneralErrors : public ::testing::Test {
+	protected:
+	void TearDown() override {
+		limpiarTablaUsers();
+	}
+};
+
+TEST_F(RegisterGeneralErrors, UserAlredyExist) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	nlohmann::json new_user = {
+		{"email", "example@gmail.com"},
+		{"username", "example"},
+		{"password", "P@ssw0rd!"},
+		{"type", "admin"},
+		{"community_name", "example_community_name"}};
+
+	nlohmann::json user_exist_email = {
+		{"email", "example@gmail.com"},
+		{"username", "example1"},
+		{"password", "P@ssw0rd!"},
+		{"type", "admin"},
+		{"community_name", "example_community_name"}};
+	nlohmann::json user_exist_username = {
+		{"email", "example@gmail.com"},
+		{"username", "example1"},
+		{"password", "P@ssw0rd!"},
+		{"type", "admin"},
+		{"community_name", "example_community_name"}};
+
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+	auto response_email = cpr::Post(cpr::Url{url}, cpr::Body{user_exist_email.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+	auto json = nlohmann::json::parse(response_email.text);
+
+	ASSERT_TRUE(json.contains("error"));
+	std::string error_message_email = json["error"];
+	EXPECT_EQ(error_message_email, "user already exists");
+	EXPECT_EQ(response_email.status_code, 400);
+
+	auto response_username = cpr::Post(cpr::Url{url}, cpr::Body{user_exist_username.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+	json = nlohmann::json::parse(response_username.text);
+
+	ASSERT_TRUE(json.contains("error"));
+	std::string error_message_username = json["error"];
+	EXPECT_EQ(error_message_username, "user already exists");
+	EXPECT_EQ(response_username.status_code, 400);
+}
+
+TEST_F(RegisterGeneralErrors, CorrectSignup) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	nlohmann::json new_user = {
+		{"email", "example@gmail.com"},
+		{"username", "example"},
+		{"password", "P@ssw0rd!"},
+		{"type", "admin"},
+		{"community_name", "example_community_name"}};
+
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+	EXPECT_EQ(response.status_code, 201);
+
+	auto json = nlohmann::json::parse(response.text);
+
+	ASSERT_TRUE(json.contains("id"));
+
+	std::string set_cookie_header = response.header["Set-Cookie"];
+
+	// Buscar la cookie "token" dentro del encabezado "Set-Cookie"
+	size_t token_pos = set_cookie_header.find("token=");
+	bool token_found = token_pos != std::string::npos;
+
+	// Verificar que se encontró la cookie "token"
+	EXPECT_TRUE(token_found);
+}
+
+TEST_F(RegisterGeneralErrors, Community_Not_Exists) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+
+	nlohmann::json new_user = {
+		{"email", "example@gmail.com"},
+		{"username", "example"},
+		{"password", "P@ssw0rd!"},
+		{"type", "neighbor"},
+		{"community_code", "example_community_code"}};
+
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+	EXPECT_EQ(response.status_code, 404);
+
+	auto json = nlohmann::json::parse(response.text);
+
+	ASSERT_TRUE(json.contains("error"));
+	std::string error_message_username = json["error"];
+	EXPECT_EQ(error_message_username, "not community exists");
 }

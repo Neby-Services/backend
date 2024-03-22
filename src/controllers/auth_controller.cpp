@@ -23,7 +23,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		std::string hash = BCrypt::generateHash(password);
 
 		if (UserModel::user_exist(db, email, username)) {
-			handle_error(res, "user alredy exist", 400);
+			handle_error(res, "user already exists", 400);
 			return;
 		}
 
@@ -45,7 +45,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 			std::string community_id = CommunityModel::get_community_id(db, community_code);
 			if (community_id == "") {
-				handle_error(res, "not community exist", 404);
+				handle_error(res, "not community exists", 404);
 				return;
 			}
 			user = UserModel::create_user(db, hash, email, username, "", 0, type);
@@ -70,10 +70,9 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 		res.set_header("Set-Cookie", cookieStream.str());
 
-		crow::json::wvalue data;
-		data["user"] = {
+		crow::json::wvalue data({
 			{"id", user.getId()},
-		};
+		});
 
 		res.code = 201;
 		res.write(data.dump());
