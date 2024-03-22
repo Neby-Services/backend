@@ -8,7 +8,7 @@
 #include <set>
 #include <string>
 
-bool is_correct_email(std::string email);
+bool is_correct_email(const std::string &email);
 
 bool is_correct_type(std::string type);
 
