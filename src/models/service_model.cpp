@@ -36,3 +36,24 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 
 	return std::make_unique<ServiceModel>(service_id, creator_id, title, description, price, "OPEN", type);
 }
+
+std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::string status) {
+	std::vector<ServiceModel> all_services;
+
+	pqxx::work txn(db);
+
+	if (status == "OPEN" or status == "CLOSED")
+		pqxx::result result = txn.exec("SELECT id, creator_id, title, description, price, status, type, buyer_user_id FROM services WHERE status = $1", status);
+	else
+		pqxx::result result = txn.exec("SELECT id, creator_id, title, description, price, status, type, buyer_user_id FROM services");
+
+	for (const auto& row : result) {
+		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), row["buyer_user_id"].as<std::string>());
+
+		all_services.push_back(service);
+	}
+
+	txn.commit();
+
+	return all_services;
+}

@@ -1,13 +1,12 @@
 #pragma once
 
-#include "utils/errors.h"
-
 #include <iostream>
-
 #include <memory>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
+
+#include "utils/errors.h"
 
 class UserModel {
 	private:
