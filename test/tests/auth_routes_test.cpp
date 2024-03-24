@@ -38,8 +38,7 @@ void limpiarTablaUsers() {
 class RegisterValidations : public ::testing::Test {
 	protected:
 	void TearDown() override {
-		// Llamar a la función limpiarTablaUsers después de que se complete el test
-		limpiarTablaUsers();
+		clean_user_table();
 	}
 };
 

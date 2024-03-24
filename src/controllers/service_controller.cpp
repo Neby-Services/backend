@@ -29,7 +29,7 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 			{"creator_id", service.get()->get_creator_id()},
 			{"description", service.get()->get_description()},
 			{"title", service.get()->get_title()},
-			{"id", service.get()->get_id()}, 
+			{"id", service.get()->get_id()},
 		});
 
 		res.write(data.dump());
