@@ -5,6 +5,7 @@
 #include <memory>
 #include <pqxx/pqxx>
 #include <string>
+#include <vector>
 
 class ServiceModel {
 	private:
@@ -29,7 +30,9 @@ class ServiceModel {
 
 	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string buyer_user_id = "");
 
-	static std::unique_ptr<ServiceModel> create_service(pqxx::connection &db, std::string creator_id, std::string title, std::string description, int price, std::string type, bool isThrow = false);
+	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, bool isThrow = false);
+
+	static std::vector<ServiceModel> get_services(pqxx::connection& db, std::string status = "");
 
 	// * static ServiceModel create_notification(pqxx::connection &db, std::string creator_id, std::string title, std::string description, int price);
 };
