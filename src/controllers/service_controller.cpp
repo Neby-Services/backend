@@ -45,6 +45,7 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 void ServiceController::get_services(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
+		// ** comment to add 
 		auto status_param = req.url_params.get("status");
 		std::string status = status_param;
 		std::vector<ServiceModel> allServices = ServiceModel::get_services(db, status);
