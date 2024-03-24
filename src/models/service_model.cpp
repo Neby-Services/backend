@@ -39,21 +39,25 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 
 std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::string status) {
 	std::vector<ServiceModel> all_services;
-
 	pqxx::work txn(db);
+	pqxx::result result;
 
-	if (status == "OPEN" or status == "CLOSED")
-		pqxx::result result = txn.exec("SELECT id, creator_id, title, description, price, status, type, buyer_user_id FROM services WHERE status = $1", status);
-	else
-		pqxx::result result = txn.exec("SELECT id, creator_id, title, description, price, status, type, buyer_user_id FROM services");
+	std::string query = "SELECT id, creator_id, title, description, price, status, type, buyer_user_id FROM services";
+	if (status != "")
+		query += " WHERE status = '" + status + "'";
+
+	result = txn.exec(query);
 
 	for (const auto& row : result) {
-		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), row["buyer_user_id"].as<std::string>());
+		std::string buyer_user_id;
+		if (!row["buyer_user_id"].is_null()) {
+			buyer_user_id = row["buyer_user_id"].as<std::string>();
+		}
+		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), buyer_user_id);
 
 		all_services.push_back(service);
 	}
-
+	std::cout << "flag 1 model" << std::endl;
 	txn.commit();
-
 	return all_services;
 }

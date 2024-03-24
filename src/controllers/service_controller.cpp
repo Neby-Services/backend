@@ -45,13 +45,21 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 void ServiceController::get_services(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
-		// ** comment to add 
-		auto status_param = req.url_params.get("status");
-		std::string status = status_param;
-		std::vector<ServiceModel> allServices = ServiceModel::get_services(db, status);
-		if (!status_param)
+		// ** comment to add
+		auto status = req.url_params.get("status");
+
+		std::vector<ServiceModel> allServices;
+		if (!status) {
 			allServices = ServiceModel::get_services(db);
 
+		} else if (status && (std::string(status) == "OPEN" || std::string(status) == "CLOSED")) {
+			allServices = ServiceModel::get_services(db, status);
+		} else {
+			handle_error(res, "status not valid value", 400);
+			return;
+		}
+
+		std::cout << "flag 3" << std::endl;
 		crow::json::wvalue::list services;
 		for (unsigned int i = 0; i < allServices.size(); i++) {
 			crow::json::wvalue service;
@@ -67,6 +75,7 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		}
 
 		crow::json::wvalue data{{"services", services}};
+		
 		res.write(data.dump());
 		res.code = 200;
 		res.end();
