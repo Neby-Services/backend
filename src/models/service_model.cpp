@@ -50,10 +50,8 @@ std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::
 
 	for (const auto& row : result) {
 		std::string buyer_user_id;
-		if (!row["buyer_user_id"].is_null()) {
-			buyer_user_id = row["buyer_user_id"].as<std::string>();
-		}
-		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), buyer_user_id);
+		
+		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>());
 
 		all_services.push_back(service);
 	}

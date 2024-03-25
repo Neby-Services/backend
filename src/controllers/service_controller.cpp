@@ -70,12 +70,11 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			service["price"] = allServices[i].get_price();
 			service["status"] = allServices[i].get_status();
 			service["type"] = allServices[i].get_type();
-			service["buyer_user_id"] = allServices[i].get_buyer_user_id();
 			services.push_back(service);
 		}
 
 		crow::json::wvalue data{{"services", services}};
-		
+
 		res.write(data.dump());
 		res.code = 200;
 		res.end();
