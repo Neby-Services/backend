@@ -1,5 +1,6 @@
 #pragma once
 
+#include <models/user_model.h>
 #include <utils/errors.h>
 
 #include <memory>
@@ -16,6 +17,7 @@ class ServiceModel {
 	int _price;
 	std::string _status;
 	std::string _type;
+	UserModel _creator;
 	std::string _buyer_user_id;
 
 	public:
@@ -29,6 +31,8 @@ class ServiceModel {
 	std::string get_buyer_user_id();
 
 	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string buyer_user_id = "");
+
+	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, UserModel creator, std::string buyer_user_id = "");
 
 	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, bool isThrow = false);
 

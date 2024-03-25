@@ -2,6 +2,9 @@
 
 ServiceModel::ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string buyer_user_id) : _id(id), _creator_id(creator_id), _title(title), _description(description), _price(price), _status(status), _type(type), _buyer_user_id(buyer_user_id) {}
 
+ServiceModel::ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, UserModel creator, std::string buyer_user_id)
+	: _id(id), _creator_id(creator_id), _title(title), _description(description), _price(price), _status(status), _type(type), _creator(creator), _buyer_user_id(buyer_user_id) {}
+
 std::string ServiceModel::get_id() { return _id; }
 std::string ServiceModel::get_creator_id() { return _creator_id; }
 std::string ServiceModel::get_title() { return _title; }
@@ -50,12 +53,11 @@ std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::
 
 	for (const auto& row : result) {
 		std::string buyer_user_id;
-		
+
 		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>());
 
 		all_services.push_back(service);
 	}
-	std::cout << "flag 1 model" << std::endl;
-	txn.commit();
+		txn.commit();
 	return all_services;
 }
