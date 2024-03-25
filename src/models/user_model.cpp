@@ -4,6 +4,8 @@ UserModel::UserModel(std::string id) : _id(id) {}
 
 UserModel::UserModel() : _id("") {}
 
+UserModel::UserModel(std::string id, std::string username): _id(id), _username(username) {} 
+
 UserModel::UserModel(std::string id, std::string email, std::string username, std::string image_url, int balance, std::string type) : _id(id), _email(email), _username(username), _image_url(image_url), _balance(balance), _type(type) {}
 
 std::string UserModel::getId() {

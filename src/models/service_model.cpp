@@ -12,6 +12,7 @@ std::string ServiceModel::get_description() { return _description; }
 int ServiceModel::get_price() { return _price; }
 std::string ServiceModel::get_status() { return _status; }
 std::string ServiceModel::get_type() { return _type; }
+UserModel ServiceModel::get_creator() { return _creator; }
 std::string ServiceModel::get_buyer_user_id() { return _buyer_user_id; }
 
 // * -------------------------------------------------------------------
@@ -45,19 +46,26 @@ std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::
 	pqxx::work txn(db);
 	pqxx::result result;
 
-	std::string query = "SELECT id, creator_id, title, description, price, status, type, buyer_user_id FROM services";
-	if (status != "")
-		query += " WHERE status = '" + status + "'";
+	std::string query =
+		"SELECT s.id, s.creator_id, s.title, s.description, s.price, s.status, s.type, u.username "
+		"FROM services s "
+		"INNER JOIN users u ON s.creator_id = u.id";
+
+	if (!status.empty())
+		query += " WHERE s.status = '" + status + "'";
 
 	result = txn.exec(query);
 
 	for (const auto& row : result) {
-		std::string buyer_user_id;
+		// Crear un objeto UserModel para el creador
+		UserModel creator(row["creator_id"].as<std::string>(), row["username"].as<std::string>());
 
-		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>());
+		// Crear el objeto ServiceModel con los datos del servicio y el creador
+		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), creator);
 
 		all_services.push_back(service);
 	}
-		txn.commit();
+
+	txn.commit();
 	return all_services;
 }

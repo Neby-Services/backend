@@ -70,7 +70,19 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			service["price"] = allServices[i].get_price();
 			service["status"] = allServices[i].get_status();
 			service["type"] = allServices[i].get_type();
+
+			crow::json::wvalue creator;
+			creator["id"] = allServices[i].get_creator().getId();
+			creator["username"] = allServices[i].get_creator().getUsername();
+
+			// Agregar el objeto creador al objeto servicio
+			// service["creator"] = creator;
+			service["creator"] = crow::json::wvalue(creator);
+
 			services.push_back(service);
+
+			std::cout << "user creator id -> " << allServices[i].get_creator().getId() << std::endl;
+			std::cout << "user creator username -> " << allServices[i].get_creator().getUsername() << std::endl;
 		}
 
 		crow::json::wvalue data{{"services", services}};

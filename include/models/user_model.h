@@ -20,6 +20,7 @@ class UserModel {
 	public:
 	UserModel();
 	UserModel(std::string id);
+	UserModel(std::string id, std::string username);
 	UserModel(std::string id, std::string email, std::string username, std::string image_url, int balance, std::string type);
 
 	std::string getId();

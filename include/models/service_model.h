@@ -28,6 +28,7 @@ class ServiceModel {
 	int get_price();
 	std::string get_status();
 	std::string get_type();
+	UserModel get_creator();
 	std::string get_buyer_user_id();
 
 	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string buyer_user_id = "");
