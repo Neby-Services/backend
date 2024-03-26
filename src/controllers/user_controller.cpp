@@ -87,3 +87,75 @@ void UserController::delete_user_by_id(pqxx::connection &db, const std::string &
 		res.end();
 	}
 }
+
+static void update_user_by_id(pqxx::connection &db, const std::string &user_id, crow::response &res) {
+	try {
+		bool userFound = UserModel::user_exist_by_id(user_id);
+		if (userFound) {
+			crow::json::rvalue update = crow::json::load(req.body);
+			if (update.has("username")) {
+				std::string temp_name = body["username"].s();
+				if (!user_validations::validate_username(temp_name, res)) {
+					res.code = 400;
+					crow::json::wvalue error_message;
+					error_message["error"] = "incorrect username";
+					res.write(error_message.dump());
+					return;
+				}
+			} else {
+				std::string temp_name = ""
+			}
+
+			if (update.has("email")) {
+				std::string temp_email = body["email"].s();
+				if (!user_validations::validate_email(temp_email, res)) {
+					res.code = 400;
+					crow::json::wvalue error_message;
+					error_message["error"] = "incorrect email";
+					res.write(error_message.dump());
+					return;
+				}
+			} else {
+				std::string temp_email = ""
+			}
+
+			if (update.has("password")) {
+				std::string temp_pass = body["password"].s();
+				if (!user_validations::validate_password(temp_pass, res)) {
+					res.code = 400;
+					crow::json::wvalue error_message;
+					error_message["error"] = "incorrect password";
+					res.write(error_message.dump());
+					return;
+				}
+			} else {
+				std::string temp_pass = ""
+			}
+			std::string hash = BCrypt::generateHash(password);
+
+			if (update.has("balance")) {
+				int temp_balance = body["balance"].i();
+				if (temp_balance < 0) {
+					res.code = 400;
+					crow::json::wvalue error_message;
+					error_message["error"] = "incorrect balance";
+					res.write(error_message.dump());
+					return;
+				}
+			} else {
+				int temp_balance = -1
+			}
+
+			bool newUser = UserModel::update_by_id(db, user_id, temp_name, temp_email, hash, temp_balance);
+		} else {
+			res.code = 404;
+			crow::json::wvalue error_message;
+			error_message["error"] = "User not found";
+			res.write(error_message.dump());
+		}
+	} catch {
+		std::cerr << "Error updating user: " << e.what() << std::endl;
+		res.code = 500;
+		res.end();
+	}
+}
