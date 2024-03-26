@@ -25,6 +25,7 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 		}
 
 		crow::json::wvalue data({
+			{"image_url", service.get()->get_image_url()},
 			{"type", service.get()->get_type()},
 			{"status", service.get()->get_status()},
 			{"price", service.get()->get_price()},
@@ -75,6 +76,7 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			service["price"] = allServices[i].get_price();
 			service["status"] = allServices[i].get_status();
 			service["type"] = allServices[i].get_type();
+			service["image_url"] = allServices[i].get_image_url();
 
 			crow::json::wvalue creator;
 			creator["id"] = allServices[i].get_creator().getId();

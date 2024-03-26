@@ -1,9 +1,9 @@
 #include <models/service_model.h>
 
-ServiceModel::ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string buyer_user_id) : _id(id), _creator_id(creator_id), _title(title), _description(description), _price(price), _status(status), _type(type), _buyer_user_id(buyer_user_id) {}
+ServiceModel::ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string image_url, std::string buyer_user_id) : _id(id), _creator_id(creator_id), _title(title), _description(description), _price(price), _status(status), _type(type), _image_url(image_url), _buyer_user_id(buyer_user_id) {}
 
-ServiceModel::ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, UserModel creator, std::string buyer_user_id)
-	: _id(id), _creator_id(creator_id), _title(title), _description(description), _price(price), _status(status), _type(type), _creator(creator), _buyer_user_id(buyer_user_id) {}
+ServiceModel::ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string image_url, UserModel creator, std::string buyer_user_id)
+	: _id(id), _creator_id(creator_id), _title(title), _description(description), _price(price), _status(status), _type(type), _image_url(image_url), _creator(creator), _buyer_user_id(buyer_user_id) {}
 
 std::string ServiceModel::get_id() { return _id; }
 std::string ServiceModel::get_creator_id() { return _creator_id; }
@@ -14,6 +14,7 @@ std::string ServiceModel::get_status() { return _status; }
 std::string ServiceModel::get_type() { return _type; }
 UserModel ServiceModel::get_creator() { return _creator; }
 std::string ServiceModel::get_buyer_user_id() { return _buyer_user_id; }
+std::string ServiceModel::get_image_url() { return _image_url; }
 
 // * -------------------------------------------------------------------
 
@@ -39,7 +40,7 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 
 	std::string service_id = result[0]["id"].as<std::string>();
 
-	return std::make_unique<ServiceModel>(service_id, creator_id, title, description, price, "OPEN", type);
+	return std::make_unique<ServiceModel>(service_id, creator_id, title, description, price, "OPEN", type, "");
 }
 
 std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::string community_id, std::string status) {
@@ -67,7 +68,7 @@ std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::
 		UserModel creator(row["creator_id"].as<std::string>(), row["username"].as<std::string>());
 
 		// Crear el objeto ServiceModel con los datos del servicio y el creador
-		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), creator);
+		ServiceModel service(row["id"].as<std::string>(), row["creator_id"].as<std::string>(), row["title"].as<std::string>(), row["description"].as<std::string>(), row["price"].as<int>(), row["status"].as<std::string>(), row["type"].as<std::string>(), "", creator);
 
 		all_services.push_back(service);
 	}

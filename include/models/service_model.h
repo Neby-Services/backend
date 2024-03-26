@@ -17,6 +17,7 @@ class ServiceModel {
 	int _price;
 	std::string _status;
 	std::string _type;
+	std::string _image_url;
 	std::string _community_id;
 	UserModel _creator;
 	std::string _buyer_user_id;
@@ -31,10 +32,11 @@ class ServiceModel {
 	std::string get_type();
 	UserModel get_creator();
 	std::string get_buyer_user_id();
+	std::string get_image_url();
 
-	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string buyer_user_id = "");
+	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string image_url, std::string buyer_user_id = "");
 
-	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, UserModel creator, std::string buyer_user_id = "");
+	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, std::string image_url, UserModel creator, std::string buyer_user_id = "");
 
 	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, std::string community_id, bool isThrow = false);
 
