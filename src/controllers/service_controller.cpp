@@ -15,7 +15,9 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 		std::string service_creator_id = body["id"].s();
 
-		std::unique_ptr<ServiceModel> service = ServiceModel::create_service(db, service_creator_id, title, description, price, type);
+		std::unique_ptr<UserModel> user = UserModel::get_community_id_by_user_id(db, service_creator_id, true);
+
+		std::unique_ptr<ServiceModel> service = ServiceModel::create_service(db, service_creator_id, title, description, price, type, user.get()->get_community_id());
 
 		if (!service) {
 			handle_error(res, "service error controller", 400);
@@ -45,21 +47,24 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 void ServiceController::get_services(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
-		// ** comment to add
+		crow::json::rvalue body = crow::json::load(req.body);
+		std::string service_creator_id = body["id"].s();
+
+		std::unique_ptr<UserModel> user = UserModel::get_community_id_by_user_id(db, service_creator_id, true);
+
 		auto status = req.url_params.get("status");
 
 		std::vector<ServiceModel> allServices;
 		if (!status) {
-			allServices = ServiceModel::get_services(db);
+			allServices = ServiceModel::get_services(db, user.get()->get_community_id());
 
 		} else if (status && (std::string(status) == "OPEN" || std::string(status) == "CLOSED")) {
-			allServices = ServiceModel::get_services(db, status);
+			allServices = ServiceModel::get_services(db, user.get()->get_community_id(), status);
 		} else {
 			handle_error(res, "status not valid value", 400);
 			return;
 		}
 
-		std::cout << "flag 3" << std::endl;
 		crow::json::wvalue::list services;
 		for (unsigned int i = 0; i < allServices.size(); i++) {
 			crow::json::wvalue service;
@@ -75,14 +80,9 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			creator["id"] = allServices[i].get_creator().getId();
 			creator["username"] = allServices[i].get_creator().getUsername();
 
-			// Agregar el objeto creador al objeto servicio
-			// service["creator"] = creator;
 			service["creator"] = crow::json::wvalue(creator);
 
 			services.push_back(service);
-
-			std::cout << "user creator id -> " << allServices[i].get_creator().getId() << std::endl;
-			std::cout << "user creator username -> " << allServices[i].get_creator().getUsername() << std::endl;
 		}
 
 		crow::json::wvalue data{{"services", services}};

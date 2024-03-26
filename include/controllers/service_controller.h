@@ -10,6 +10,7 @@
 
 // ** custom includes
 #include <models/service_model.h>
+#include <models/user_model.h>
 #include <utils/errors.h>
 #include <utils/utils.h>
 #include <utils/validations.h>

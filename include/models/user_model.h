@@ -16,6 +16,7 @@ class UserModel {
 	std::string _image_url;
 	int _balance;
 	std::string _type;
+	std::string _community_id;
 
 	public:
 	UserModel();
@@ -29,6 +30,9 @@ class UserModel {
 	std::string getImageUrl();
 	int getBalance();
 	std::string getType();
+	std::string get_community_id();
+
+	void set_community_id(std::string community_id);
 
 	static UserModel create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type);
 	static bool user_exist(pqxx::connection& db, std::string email, std::string ussername);
@@ -39,4 +43,6 @@ class UserModel {
 	static std::string get_password_by_email(pqxx::connection& db, std::string email);
 	static UserModel get_user_by_id(pqxx::connection& db, const std::string& id);
 	static bool delete_by_id(pqxx::connection& db, const std::string& id);
+
+	static std::unique_ptr<UserModel> get_community_id_by_user_id(pqxx ::connection& db, const std::string& user_id, bool isThrow = false);
 };

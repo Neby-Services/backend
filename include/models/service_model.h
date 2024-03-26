@@ -17,6 +17,7 @@ class ServiceModel {
 	int _price;
 	std::string _status;
 	std::string _type;
+	std::string _community_id;
 	UserModel _creator;
 	std::string _buyer_user_id;
 
@@ -35,9 +36,9 @@ class ServiceModel {
 
 	ServiceModel(std::string id, std::string creator_id, std::string title, std::string description, int price, std::string status, std::string type, UserModel creator, std::string buyer_user_id = "");
 
-	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, bool isThrow = false);
+	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, std::string community_id, bool isThrow = false);
 
-	static std::vector<ServiceModel> get_services(pqxx::connection& db, std::string status = "");
+	static std::vector<ServiceModel> get_services(pqxx::connection& db, std::string community_id, std::string status = "");
 
 	// * static ServiceModel create_notification(pqxx::connection &db, std::string creator_id, std::string title, std::string description, int price);
 };

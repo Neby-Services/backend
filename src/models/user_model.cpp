@@ -4,7 +4,7 @@ UserModel::UserModel(std::string id) : _id(id) {}
 
 UserModel::UserModel() : _id("") {}
 
-UserModel::UserModel(std::string id, std::string username): _id(id), _username(username) {} 
+UserModel::UserModel(std::string id, std::string username) : _id(id), _username(username) {}
 
 UserModel::UserModel(std::string id, std::string email, std::string username, std::string image_url, int balance, std::string type) : _id(id), _email(email), _username(username), _image_url(image_url), _balance(balance), _type(type) {}
 
@@ -30,6 +30,12 @@ int UserModel::getBalance() {
 
 std::string UserModel::getType() {
 	return _type;
+}
+
+std::string UserModel::get_community_id() { return _community_id; }
+
+void UserModel::set_community_id(std::string community_id) {
+	this->_community_id = community_id;
 }
 
 UserModel UserModel::create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type) {
@@ -161,4 +167,28 @@ bool UserModel::delete_by_id(pqxx::connection& db, const std::string& id) {
 		std::cerr << "Failed to delete user: " << e.what() << std::endl;
 		return false;
 	}
+}
+
+std::unique_ptr<UserModel> UserModel::get_community_id_by_user_id(pqxx ::connection& db, const std::string& user_id, bool isThrow) {
+	pqxx::work txn(db);
+
+	pqxx::result result = txn.exec_params("SELECT community_id FROM users WHERE id = $1", user_id);
+
+	txn.commit();
+
+	if (result.empty()) {
+		if (isThrow)
+			throw data_not_found_exception("User not found");
+
+		else
+			return nullptr;
+	}
+
+	std::string community_id = result[0]["community_id"].as<std::string>();
+
+	auto user_model = std::make_unique<UserModel>(user_id);
+
+	user_model.get()->set_community_id(community_id);
+
+	return user_model;
 }

@@ -17,14 +17,15 @@ std::string ServiceModel::get_buyer_user_id() { return _buyer_user_id; }
 
 // * -------------------------------------------------------------------
 
-std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, bool isThrow) {
+std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, std::string community_id, bool isThrow) {
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec_params("INSERT INTO services (creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+	pqxx::result result = txn.exec_params("INSERT INTO services (creator_id, title, description, price, type, community_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
 										  creator_id,
 										  title,
 										  description,
-										  price, type);
+										  price, type,
+										  community_id);
 
 	txn.commit();
 
@@ -41,7 +42,7 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 	return std::make_unique<ServiceModel>(service_id, creator_id, title, description, price, "OPEN", type);
 }
 
-std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::string status) {
+std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::string community_id, std::string status) {
 	std::vector<ServiceModel> all_services;
 	pqxx::work txn(db);
 	pqxx::result result;
@@ -51,8 +52,13 @@ std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::
 		"FROM services s "
 		"INNER JOIN users u ON s.creator_id = u.id";
 
-	if (!status.empty())
+	if (!community_id.empty()) {
+		query += " WHERE u.community_id = '" + community_id + "'";
+		if (!status.empty())
+			query += " AND s.status = '" + status + "'";
+	} else if (!status.empty()) {
 		query += " WHERE s.status = '" + status + "'";
+	}
 
 	result = txn.exec(query);
 
