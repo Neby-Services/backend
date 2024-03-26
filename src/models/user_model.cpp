@@ -58,6 +58,22 @@ bool UserModel::user_exist(pqxx::connection& db, std::string email, std::string 
 	}
 }
 
+bool UserModel::user_exist_by_id(pqxx::connection& db, std::string id) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("SELECT username FROM users WHERE id = $1", id);
+
+		bool userExists = !result.empty() && !result[0][0].is_null();
+
+		txn.commit();
+
+		return userExists;
+	} catch (const std::exception& e) {
+		return false;
+	}
+}
+
 std::vector<UserModel> UserModel::get_users(pqxx::connection& db) {
 	std::vector<UserModel> all_users;
 
@@ -157,6 +173,26 @@ bool UserModel::delete_by_id(pqxx::connection& db, const std::string& id) {
 		return true;
 	} catch (const std::exception& e) {
 		std::cerr << "Failed to delete user: " << e.what() << std::endl;
+		return false;
+	}
+}
+
+bool UserModel::update_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password) {
+	try {
+		pqxx::work txn(db);
+		if (username != "") {
+			pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
+		}
+		if (email != "") {
+			pqxx::result result = txn.exec_params("UPDATE users SET email = $1 WHERE id = $2", email, id);
+		}
+		if (password != "") {
+			pqxx::result result = txn.exec_params("UPDATE users SET password = $1 WHERE id = $2", password, id);
+		}
+		txn.commit();
+		return true;
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to update user: " << e.what() << std::endl;
 		return false;
 	}
 }

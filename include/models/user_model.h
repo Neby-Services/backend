@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "utils/errors.h"
+#include "utils/user_validations.h"
 
 class UserModel {
 	private:
@@ -31,6 +32,7 @@ class UserModel {
 
 	static UserModel create_user(pqxx::connection& db, std::string password, std::string email, std::string username, std::string image_url, int balance, std::string type);
 	static bool user_exist(pqxx::connection& db, std::string email, std::string ussername);
+	static bool user_exist_by_id(pqxx::connection& db, std::string id);
 	static std::vector<UserModel> get_users(pqxx::connection& db);
 	static void set_community_id(pqxx::connection& db, std::string community_id, std::string user_id);
 
@@ -38,4 +40,5 @@ class UserModel {
 	static std::string get_password_by_email(pqxx::connection& db, std::string email);
 	static UserModel get_user_by_id(pqxx::connection& db, const std::string& id);
 	static bool delete_by_id(pqxx::connection& db, const std::string& id);
+	static bool update_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password);
 };
