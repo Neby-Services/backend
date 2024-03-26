@@ -88,72 +88,63 @@ void UserController::delete_user_by_id(pqxx::connection &db, const std::string &
 	}
 }
 
-static void update_user_by_id(pqxx::connection &db, const std::string &user_id, crow::response &res) {
+void UserController::update_user_by_id(pqxx::connection &db, const std::string &user_id, const crow::request &req, crow::response &res) {
 	try {
-		bool userFound = UserModel::user_exist_by_id(user_id);
+		bool userFound = UserModel::user_exist_by_id(db, user_id);
 		if (userFound) {
 			crow::json::rvalue update = crow::json::load(req.body);
+			std::string temp_name = "", temp_pass = "", temp_email = "";
 			if (update.has("username")) {
-				std::string temp_name = body["username"].s();
-				if (!user_validations::validate_username(temp_name, res)) {
+				temp_name = update["username"].s();
+				if (!validate_username(temp_name, res)) {
 					res.code = 400;
 					crow::json::wvalue error_message;
 					error_message["error"] = "incorrect username";
 					res.write(error_message.dump());
 					return;
 				}
-			} else {
-				std::string temp_name = ""
 			}
-
 			if (update.has("email")) {
-				std::string temp_email = body["email"].s();
-				if (!user_validations::validate_email(temp_email, res)) {
+				temp_email = update["email"].s();
+				if (!validate_email(temp_email, res)) {
 					res.code = 400;
 					crow::json::wvalue error_message;
 					error_message["error"] = "incorrect email";
 					res.write(error_message.dump());
 					return;
 				}
-			} else {
-				std::string temp_email = ""
 			}
-
 			if (update.has("password")) {
-				std::string temp_pass = body["password"].s();
-				if (!user_validations::validate_password(temp_pass, res)) {
+				temp_pass = update["password"].s();
+				if (!validate_password(temp_pass, res)) {
 					res.code = 400;
 					crow::json::wvalue error_message;
 					error_message["error"] = "incorrect password";
 					res.write(error_message.dump());
 					return;
 				}
-			} else {
-				std::string temp_pass = ""
 			}
-			std::string hash = BCrypt::generateHash(password);
-
-			if (update.has("balance")) {
-				int temp_balance = body["balance"].i();
-				if (temp_balance < 0) {
-					res.code = 400;
-					crow::json::wvalue error_message;
-					error_message["error"] = "incorrect balance";
-					res.write(error_message.dump());
-					return;
-				}
+			std::string hash = BCrypt::generateHash(temp_pass);
+			bool succes = UserModel::update_by_id(db, user_id, temp_name, temp_email, hash);
+			if (succes) {
+				res.code = 200;
+				crow::json::wvalue response_message;
+				response_message["message"] = "User updated successfully";
+				res.write(response_message.dump());
 			} else {
-				int temp_balance = -1
+				res.code = 400;
+				crow::json::wvalue error_message;
+				error_message["error"] = "Failed to update user";
+				res.write(error_message.dump());
 			}
-
-			bool newUser = UserModel::update_by_id(db, user_id, temp_name, temp_email, hash, temp_balance);
+			res.end();
 		} else {
 			res.code = 404;
 			crow::json::wvalue error_message;
 			error_message["error"] = "User not found";
 			res.write(error_message.dump());
 		}
-	} catch {
+	} catch (const std::exception &e) {
 		std::cerr << "Error updating user: " << e.what() << std::endl;
 		res.code = 500;
 		res.end();

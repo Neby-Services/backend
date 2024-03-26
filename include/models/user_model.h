@@ -40,5 +40,5 @@ class UserModel {
 	static std::string get_password_by_email(pqxx::connection& db, std::string email);
 	static UserModel get_user_by_id(pqxx::connection& db, const std::string& id);
 	static bool delete_by_id(pqxx::connection& db, const std::string& id);
-	static bool update_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password, const int balance);
+	static bool update_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password);
 };

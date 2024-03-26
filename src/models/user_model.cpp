@@ -177,8 +177,8 @@ bool UserModel::delete_by_id(pqxx::connection& db, const std::string& id) {
 	}
 }
 
-static bool UserModel::update_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password, const int balance) {
-	try ̣{
+bool UserModel::update_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password) {
+	try {
 		pqxx::work txn(db);
 		if (username != "") {
 			pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
@@ -189,13 +189,9 @@ static bool UserModel::update_by_id(pqxx::connection& db, const std::string& id,
 		if (password != "") {
 			pqxx::result result = txn.exec_params("UPDATE users SET password = $1 WHERE id = $2", password, id);
 		}
-		if (balance != -1) {
-			pqxx::result result = txn.exec_params("UPDATE users SET balance = $1 WHERE id = $2", balance, id);
-		}
 		txn.commit();
 		return true;
-	}
-	catch {
+	} catch (const std::exception& e) {
 		std::cerr << "Failed to update user: " << e.what() << std::endl;
 		return false;
 	}
