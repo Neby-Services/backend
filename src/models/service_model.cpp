@@ -16,11 +16,12 @@ std::string ServiceModel::get_buyer_user_id() { return _buyer_user_id; }
 std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db, std::string creator_id, std::string title, std::string description, int price, std::string type, bool isThrow) {
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec_params("INSERT INTO services (creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-										  creator_id,
-										  title,
-										  description,
-										  price, type);
+	pqxx::result result = txn.exec_params(
+		"INSERT INTO services (creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		creator_id,
+		title,
+		description,
+		price, type);
 
 	txn.commit();
 
@@ -34,7 +35,7 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 
 	std::string service_id = result[0]["id"].as<std::string>();
 
-	return std::make_unique<ServiceModel>(service_id, creator_id, title, description, price, "OPEN", type);
+	return std::make_unique<ServiceModel>(service_id, creator_id, title, description, price, "open", type);
 }
 
 std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, std::string status) {

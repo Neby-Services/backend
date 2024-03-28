@@ -1,5 +1,4 @@
-#ifndef COMMUNITY_MODEL_H
-#define COMMUNITY_MODEL_H
+#pragma once
 
 #include <ctime>
 #include <pqxx/pqxx>
@@ -21,7 +20,5 @@ class CommunityModel {
 	static std::string generate_community_code();
 
 	static CommunityModel create_community(pqxx::connection& db, std::string community_name);
-	static std::string get_community_id(pqxx::connection &db, std::string community_code);
+	static std::string get_community_id(pqxx::connection& db, std::string community_code);
 };
-
-#endif

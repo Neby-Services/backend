@@ -1,13 +1,10 @@
-#include "controllers/auth_controller.h"
-
+#include <controllers/auth_controller.h>
 #include <utils/auth.h>
-
+#include <utils/user_validations.h>
+#include <bcrypt/BCrypt.hpp>
 #include <ctime>  // Include the ctime header for time functions
 #include <iomanip>
 #include <string>
-
-#include "bcrypt/BCrypt.hpp"
-#include "utils/user_validations.h"
 
 void AuthController::register_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
@@ -15,44 +12,43 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 		crow::json::rvalue body = crow::json::load(req.body);
 
-		std::string password = body["password"].s();
 		std::string username = body["username"].s();
 		std::string email = body["email"].s();
+		std::string password = body["password"].s();
 		std::string type = body["type"].s();
+		std::string community_id;
 
 		std::string hash = BCrypt::generateHash(password);
 
-		if (UserModel::user_exist(db, email, username)) {
-			handle_error(res, "user already exists", 400);
+		if (UserModel::exists_username(db, username)) {
+			handle_error(res, "username already in use", 400);
 			return;
 		}
 
-		// UserModel user = UserModel::create_user(db, hash, email, username, "", 0, type);
-
-		UserModel user;
-
-		if (type == Roles::ADMIN) {
-			// ! check if community exist with name
-			std::string community_name = body["community_name"].s();
-			CommunityModel community = CommunityModel::create_community(db, community_name);
-			user = UserModel::create_user(db, hash, email, username, "", 0, type);
-			UserModel::set_community_id(db, community.get_id(), user.getId());
-
-		} else if (type == Roles::NEIGHBOR) {
-			// ! check if community exist with code
-			std::string community_code = body["community_code"].s();
-			// ! TODO:
-
-			std::string community_id = CommunityModel::get_community_id(db, community_code);
-			if (community_id == "") {
-				handle_error(res, "not community exists", 404);
-				return;
-			}
-			user = UserModel::create_user(db, hash, email, username, "", 0, type);
-			UserModel::set_community_id(db, community_id, user.getId());
+		if (UserModel::exists_email(db, email)) {
+			handle_error(res, "email already in use", 400);
+			return;
 		}
 
-		std::string jwtToken = create_token(user.getId(), type);
+		if (type == Roles::ADMIN) {
+			CommunityModel community = CommunityModel::create_community(db, body["community_name"].s());
+			community_id = community.get_id();
+		} else if (type == Roles::NEIGHBOR) {
+			community_id = CommunityModel::get_community_id(db, body["community_code"].s());
+			if (community_id == "") {
+				handle_error(res, "community does not exist", 404);
+				return;
+			}
+		}
+
+		std::unique_ptr<UserModel> user = UserModel::create_user(db, community_id, username, email, hash, type, 0);
+
+		if (!user) {
+			handle_error(res, "internal server error", 500);
+			return;
+		}
+
+		std::string jwtToken = create_token(user.get()->getId(), type);
 		int expirationTimeSeconds = 3600;
 		time_t now = time(0);
 		time_t expirationTime = now + expirationTimeSeconds;
@@ -71,7 +67,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		res.set_header("Set-Cookie", cookieStream.str());
 
 		crow::json::wvalue data({
-			{"id", user.getId()},
+			{"id", user.get()->getId()},
 		});
 
 		res.code = 201;
@@ -79,7 +75,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		res.end();
 	} catch (const std::exception &e) {
 		std::cerr << "Error in register_user: " << e.what() << std::endl;
-		handle_error(res, "INTERNAL SERVER ERROR", 500);
+		handle_error(res, "internal server error", 500);
 	}
 }
 
@@ -104,7 +100,7 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 		std::unique_ptr<UserModel> user = UserModel::get_user_by_email(db, email);
 
 		if (!user) {
-			handle_error(res, "user by email not exist", 404);
+			handle_error(res, "no user found with this email", 404);
 			return;
 		}
 

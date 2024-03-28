@@ -1,4 +1,3 @@
-
 int HTTP_PORT = std::stoi(std::getenv("HTTP_PORT"));
 std::string DB_NAME = std::string(std::getenv("DB_NAME"));
 std::string DB_USER = std::string(std::getenv("DB_USER"));

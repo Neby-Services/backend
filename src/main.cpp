@@ -1,15 +1,13 @@
+#include <crow.h>
+#include <routes/auth_routes.h>
 #include <routes/service_routes.h>
-
+#include <routes/user_routes.h>
+#include <utils/common.h>
 #include <cstdlib>
 #include <format>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <string>
-
-#include "crow.h"
-#include "routes/auth_routes.h"
-#include "routes/user_routes.h"
-#include "utils/common.h"
 
 int main() {
 	try {

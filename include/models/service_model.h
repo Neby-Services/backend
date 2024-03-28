@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utils/errors.h>
-
 #include <memory>
 #include <pqxx/pqxx>
 #include <string>
@@ -36,16 +35,3 @@ class ServiceModel {
 
 	// * static ServiceModel create_notification(pqxx::connection &db, std::string creator_id, std::string title, std::string description, int price);
 };
-
-/*
-CREATE TABLE IF NOT EXISTS services (
-	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-	creator_id UUID REFERENCES users(id),
-	service_name VARCHAR(255) NOT NULL,
-	description TEXT,
-	price NUMERIC(10, 2),
-	status service_status DEFAULT 'OPEN', -- Estado del servicio: 'OPEN' o 'CLOSED'
-	usuario_venta_id UUID,
-	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-); */

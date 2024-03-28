@@ -52,7 +52,7 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		if (!status) {
 			allServices = ServiceModel::get_services(db);
 
-		} else if (status && (std::string(status) == "OPEN" || std::string(status) == "CLOSED")) {
+		} else if (status && (std::string(status) == "open" || std::string(status) == "closed")) {
 			allServices = ServiceModel::get_services(db, status);
 		} else {
 			handle_error(res, "status not valid value", 400);
@@ -75,7 +75,7 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		}
 
 		crow::json::wvalue data{{"services", services}};
-		
+
 		res.write(data.dump());
 		res.code = 200;
 		res.end();

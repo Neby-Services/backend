@@ -22,15 +22,14 @@ CommunityModel CommunityModel::create_community(pqxx::connection& db, std::strin
 
 	std::string community_code = generate_community_code();
 
-	txn.exec_params("INSERT INTO communities (community_name, community_code) VALUES ($1, $2)", community_name, community_code);
-
-	pqxx::result result = txn.exec_params("SELECT id FROM communities WHERE community_code = $1", community_code);
-
-	std::string res = result[0][0].as<std::string>();
+	pqxx::result result = txn.exec_params("INSERT INTO communities (community_name, community_code) VALUES ($1, $2) RETURNING id, community_name, community_code", community_name, community_code);
 
 	txn.commit();
 
-	return CommunityModel(res, community_code, community_name);
+	return CommunityModel(
+		result[0]["id"].as<std::string>(),
+		result[0]["community_code"].as<std::string>(),
+		result[0]["community_name"].as<std::string>());
 }
 
 std::string CommunityModel::get_community_id(pqxx::connection& db, std::string community_code) {
