@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ $# -eq 0 ]; then
+	echo "Usage: $0 <file_path> [<directory_path>]"
+	exit 1
+fi
+
 compile_backend() {
 	echo "Compiling..."
 	cmake .
@@ -7,7 +12,7 @@ compile_backend() {
 }
 
 run_backend() {
-	./backend &
+	source "$1" &
 	BACKEND_PID=$!
 	echo "Running process with PID: $BACKEND_PID"
 }
@@ -36,5 +41,9 @@ main() {
 	run_backend
 	monitor_changes
 }
+
+if [ -d "$2" ]; then
+	cd "$2"	|| exit 1
+fi
 
 main
