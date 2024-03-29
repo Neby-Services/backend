@@ -52,11 +52,23 @@ bool CommunityModel::exists_name(pqxx::connection& db, const std::string& name) 
 
 		pqxx::result result = txn.exec_params("SELECT community_name FROM communities WHERE community_name = $1", name);
 
-		bool communityExists = !result.empty() && !result[0][0].is_null();
+		txn.commit();
+
+		return !result.empty() && !result[0][0].is_null();
+	} catch (const std::exception& e) {
+		return false;
+	}
+}
+
+bool CommunityModel::exists_code(pqxx::connection& db, const std::string& code) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("SELECT community_code FROM communities WHERE community_code = $1", code);
 
 		txn.commit();
 
-		return communityExists;
+		return !result.empty() && !result[0][0].is_null();
 	} catch (const std::exception& e) {
 		return false;
 	}
