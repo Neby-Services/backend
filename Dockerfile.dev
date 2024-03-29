@@ -1,0 +1,27 @@
+FROM gcc:latest
+
+RUN apt-get update && apt-get install -y libpqxx-dev libboost-dev cmake inotify-tools git 
+
+WORKDIR /app
+
+COPY crow-v1.0+5.deb .
+
+RUN dpkg -i crow-v1.0+5.deb
+
+COPY . .
+
+RUN apt install -y nlohmann-json3-dev libgtest-dev libssl-dev
+
+RUN git clone https://github.com/arun11299/cpp-jwt.git &&\
+	git clone https://github.com/trusch/libbcrypt.git && \
+	cd libbcrypt && \
+	mkdir build && \ 
+	cd build && \ 
+	cmake .. && \
+	make && \
+	make install && \
+	ldconfig
+
+RUN chmod 777 hot-reload.sh
+
+CMD ["./hot-reload.sh", "./backend"]
