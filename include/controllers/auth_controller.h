@@ -1,16 +1,14 @@
 #pragma once
 
+#include <crow.h>
 #include <models/community_model.h>
+#include <models/user_model.h>
 #include <utils/common.h>
-
+#include <utils/utils.h>
 #include <format>
 #include <memory>
 #include <pqxx/pqxx>
 #include <string>
-
-#include "crow.h"
-#include "models/user_model.h"
-#include "utils/utils.h"
 
 class AuthController {
 	public:

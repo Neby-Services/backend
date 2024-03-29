@@ -1,11 +1,9 @@
 #pragma once
 #include <crow.h>
 #include <middlewares/verify_jwt.h>
-
+#include <bcrypt/BCrypt.hpp>
 #include <map>
 #include <string>
-
-#include "bcrypt/BCrypt.hpp"
 
 using NebyApp = crow::App<VerifyJWT>;
 

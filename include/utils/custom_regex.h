@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utils/common.h>
-
 #include <cctype>
 #include <iostream>
 #include <regex>

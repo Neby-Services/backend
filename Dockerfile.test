@@ -1,6 +1,6 @@
 FROM gcc:latest
 
-RUN apt-get update && apt-get install -y libpqxx-dev  cmake inotify-tools git 
+RUN apt-get update && apt-get install -y libpqxx-dev libboost-dev cmake inotify-tools git 
 
 WORKDIR /app
 
@@ -12,7 +12,6 @@ RUN	cd test && \
 	git submodule add https://github.com/whoshuu/cpr.git extern/cpr && \
 	ldconfig
 
+RUN chmod 777 hot-reload.sh
 
-RUN chmod 777 hot-reload-test.sh
-
-CMD ["./hot-reload-test.sh"]
+CMD ["./hot-reload.sh", "./test", "./test/"]

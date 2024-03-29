@@ -1,14 +1,14 @@
-#include "utils/common.h"
+#include <utils/common.h>
 
 const std::string Roles::ADMIN = "admin";
 const std::string Roles::NEIGHBOR = "neighbor";
 
-const std::string NotificationStatus::PENDING = "PENDING";
-const std::string NotificationStatus::ACCEPTED = "ACCEPTED";
-const std::string NotificationStatus::REFUSED = "REFUSED";
+const std::string NotificationStatus::PENDING = "pending";
+const std::string NotificationStatus::ACCEPTED = "accepted";
+const std::string NotificationStatus::REFUSED = "refused";
 
-const std::string ServiceStatus::CLOSED = "CLOSED";
-const std::string ServiceStatus::OPEN = "OPEN";
+const std::string ServiceStatus::CLOSED = "closed";
+const std::string ServiceStatus::OPEN = "open";
 
-const std::string ServiceType::OFFERED = "OFFERED";
-const std::string ServiceType::REQUESTED = "REQUESTED";
+const std::string ServiceType::OFFERED = "offered";
+const std::string ServiceType::REQUESTED = "requested";
