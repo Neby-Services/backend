@@ -46,6 +46,22 @@ std::unique_ptr<CommunityModel> CommunityModel::create_community(pqxx::connectio
 		result[0]["updated_at"].as<std::string>());
 }
 
+bool CommunityModel::exists_name(pqxx::connection& db, const std::string& name) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("SELECT community_name FROM communities WHERE community_name = $1", name);
+
+		bool communityExists = !result.empty() && !result[0][0].is_null();
+
+		txn.commit();
+
+		return communityExists;
+	} catch (const std::exception& e) {
+		return false;
+	}
+}
+
 std::unique_ptr<CommunityModel> get_community(pqxx::connection& db, const std::string& column, const std::string& value, bool throw_when_null) {
 	pqxx::work txn(db);
 	pqxx::result result = txn.exec_params(std::format("SELECT id, name, code, created_at, updated_at FROM communities WHERE {} = $1", column), value);
