@@ -60,7 +60,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_open_services_by_co
 
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec("SELECT id, community_id, creator_id, buyer_id, title, description, price, status, type, image_url, created_at, updated_at FROM services");
+	pqxx::result result = txn.exec_params("SELECT id, community_id, creator_id, buyer_id, title, description, price, status, type, image_url, created_at, updated_at FROM services WHERE community_id = $1", community_id);
 
 	txn.commit();
 

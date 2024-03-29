@@ -143,7 +143,7 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 
 			res.end();
 		} else {
-			handle_error(res, "password invalid", 401);
+			handle_error(res, "password invalid", 400);
 			return;
 		}
 
