@@ -6,14 +6,14 @@ void UserController::get_users(pqxx::connection &db, const crow::request &req, c
 		crow::json::wvalue::list users;
 		for (unsigned int i = 0; i < allUsers.size(); ++i) {
 			crow::json::wvalue user;
-			user["id"] = allUsers[i].get()->getId();
-			user["community_id"] = allUsers[i].get()->getCommunityId();
-			user["username"] = allUsers[i].get()->getUsername();
-			user["email"] = allUsers[i].get()->getEmail();
-			user["type"] = allUsers[i].get()->getType();
-			user["balance"] = allUsers[i].get()->getBalance();
-			user["created_at"] = allUsers[i].get()->getCreatedAt();
-			user["updated_at"] = allUsers[i].get()->getUpdatedAt();
+			user["id"] = allUsers[i].get()->get_id();
+			user["community_id"] = allUsers[i].get()->get_community_id();
+			user["username"] = allUsers[i].get()->get_username();
+			user["email"] = allUsers[i].get()->get_email();
+			user["type"] = allUsers[i].get()->get_type();
+			user["balance"] = allUsers[i].get()->get_balance();
+			user["created_at"] = allUsers[i].get()->get_created_at();
+			user["updated_at"] = allUsers[i].get()->get_updated_at();
 			users.push_back(user);
 		}
 		crow::json::wvalue data{{"users", users}};
@@ -41,14 +41,14 @@ void UserController::get_user_by_id(pqxx::connection &db, const crow::request &r
 		}
 
 		crow::json::wvalue user_data;
-		user_data["id"] = user.get()->getId();
-		user_data["community_id"] = user.get()->getCommunityId();
-		user_data["username"] = user.get()->getUsername();
-		user_data["email"] = user.get()->getEmail();
-		user_data["type"] = user.get()->getType();
-		user_data["balance"] = user.get()->getBalance();
-		user_data["created_at"] = user.get()->getCreatedAt();
-		user_data["updated_at"] = user.get()->getUpdatedAt();
+		user_data["id"] = user.get()->get_id();
+		user_data["community_id"] = user.get()->get_community_id();
+		user_data["username"] = user.get()->get_username();
+		user_data["email"] = user.get()->get_email();
+		user_data["type"] = user.get()->get_type();
+		user_data["balance"] = user.get()->get_balance();
+		user_data["created_at"] = user.get()->get_created_at();
+		user_data["updated_at"] = user.get()->get_updated_at();
 
 		crow::json::wvalue data{{"user", user_data}};
 		res.code = 200;

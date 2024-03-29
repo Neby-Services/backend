@@ -22,25 +22,25 @@ class UserModel {
 	public:
 	UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at);
 
-	std::string getId();
-	std::string getCommunityId();
-	std::string getUsername();
-	std::string getEmail();
-	std::string getType();
-	int getBalance();
-	std::string getCreatedAt();
-	std::string getUpdatedAt();
+	std::string get_id() const;
+	std::string get_community_id() const;
+	std::string get_username() const;
+	std::string get_email() const;
+	std::string get_type() const;
+	int get_balance() const;
+	std::string get_created_at() const;
+	std::string get_updated_at() const;
 
-	static std::unique_ptr<UserModel> create_user(pqxx::connection& db, const std::string& community_id, const std::string& username, const std::string& email, const std::string& password, const std::string& type, const int balance);
+	static std::unique_ptr<UserModel> create_user(pqxx::connection& db, const std::string& community_id, const std::string& username, const std::string& email, const std::string& password, const std::string& type, const int balance, bool throw_when_null = false);
 	static std::vector<std::unique_ptr<UserModel>> get_users(pqxx::connection& db);
 
 	static bool exists_id(pqxx::connection& db, const std::string& id);
 	static bool exists_username(pqxx::connection& db, const std::string& username);
 	static bool exists_email(pqxx::connection& db, const std::string& email);
 
-	static std::unique_ptr<UserModel> get_user_by_id(pqxx::connection& db, const std::string& id);
-	static std::unique_ptr<UserModel> get_user_by_username(pqxx::connection& db, const std::string& username);
-	static std::unique_ptr<UserModel> get_user_by_email(pqxx::connection& db, const std::string& email);
+	static std::unique_ptr<UserModel> get_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
+	static std::unique_ptr<UserModel> get_user_by_username(pqxx::connection& db, const std::string& username, bool throw_when_null = false);
+	static std::unique_ptr<UserModel> get_user_by_email(pqxx::connection& db, const std::string& email, bool throw_when_null = false);
 	static std::string get_password_by_email(pqxx::connection& db, const std::string& email);
 
 	static bool delete_user_by_id(pqxx::connection& db, const std::string& id);

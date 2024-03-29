@@ -31,14 +31,19 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		}
 
 		if (type == Roles::ADMIN) {
-			CommunityModel community = CommunityModel::create_community(db, body["community_name"].s());
-			community_id = community.get_id();
+			std::unique_ptr<CommunityModel> community = CommunityModel::create_community(db, body["community_name"].s());
+			if (!community) {
+				handle_error(res, "internal server error", 500);
+				return;
+			}
+			community_id = community.get()->get_id();
 		} else if (type == Roles::NEIGHBOR) {
-			community_id = CommunityModel::get_community_id(db, body["community_code"].s());
-			if (community_id == "") {
+			std::unique_ptr<CommunityModel> community = CommunityModel::get_community_by_code(db, body["community_code"].s());
+			if (!community) {
 				handle_error(res, "community does not exist", 404);
 				return;
 			}
+			community_id = community.get()->get_id();
 		}
 
 		std::unique_ptr<UserModel> user = UserModel::create_user(db, community_id, username, email, hash, type, 0);
@@ -48,7 +53,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			return;
 		}
 
-		std::string jwtToken = create_token(user.get()->getId(), type);
+		std::string jwtToken = create_token(user.get()->get_id(), type);
 		int expirationTimeSeconds = 3600;
 		time_t now = time(0);
 		time_t expirationTime = now + expirationTimeSeconds;
@@ -67,7 +72,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		res.set_header("Set-Cookie", cookieStream.str());
 
 		crow::json::wvalue data({
-			{"id", user.get()->getId()},
+			{"id", user.get()->get_id()},
 		});
 
 		res.code = 201;
@@ -109,7 +114,7 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 		std::string password = body["password"].s();
 
 		if (BCrypt::validatePassword(password, encrypt_password)) {
-			std::string jwtToken = create_token(user.get()->getId(), user.get()->getType());
+			std::string jwtToken = create_token(user.get()->get_id(), user.get()->get_type());
 
 			int expirationTimeSeconds = 3600;
 			time_t now = time(0);
@@ -130,8 +135,8 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 
 			crow::json::wvalue data;
 			data["user"] = {
-				{"id", user.get()->getId()},
-				{"type", user.get()->getType()}};
+				{"id", user.get()->get_id()},
+				{"type", user.get()->get_type()}};
 
 			res.code = 200;
 			res.write(data.dump());
