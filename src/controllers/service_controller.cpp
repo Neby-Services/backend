@@ -16,7 +16,9 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, creator_id);
 
-		std::unique_ptr<ServiceModel> service = ServiceModel::create_service(db, user.get()->get_community_id(), creator_id, title, description, price, type, nullptr);
+		std::cout << "id creator -> " << creator_id << std::endl;
+
+		std::unique_ptr<ServiceModel> service = ServiceModel::create_service(db, creator_id, title, description, price, type, std::nullopt);
 
 		if (!service) {
 			handle_error(res, "internal server error", 500);
@@ -25,7 +27,6 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 		crow::json::wvalue data(
 			{{"id", service.get()->get_id()},
-			 {"community_id", service.get()->get_community_id()},
 			 {"creator_id", service.get()->get_creator_id()},
 			 {"title", service.get()->get_title()},
 			 {"description", service.get()->get_description()},
@@ -61,7 +62,6 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			crow::json::wvalue service;
 
 			service["id"] = all_services[i].get()->get_id();
-			service["community_id"] = all_services[i].get()->get_community_id();
 			service["creator_id"] = all_services[i].get()->get_creator_id();
 			if (all_services[i].get()->get_buyer_id().has_value())
 				service["buyer_id"] = all_services[i].get()->get_buyer_id().value();
