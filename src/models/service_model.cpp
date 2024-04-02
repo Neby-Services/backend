@@ -1,9 +1,10 @@
 #include <models/service_model.h>
 
-ServiceModel::ServiceModel(std::string id, std::string community_id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::string created_at, std::string updated_at) : _id(id), _community_id(community_id), _creator_id(creator_id), _buyer_id(buyer_id), _title(title), _description(description), _price(price), _status(status), _type(type), _image_url(image_url), _created_at(created_at), _updated_at(updated_at) {}
+ServiceModel::ServiceModel(std::string id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::string created_at, std::string updated_at) : _id(id), _creator_id(creator_id), _buyer_id(buyer_id), _title(title), _description(description), _price(price), _status(status), _type(type), _image_url(image_url), _created_at(created_at), _updated_at(updated_at) {}
+
+ServiceModel::ServiceModel(std::string id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::string created_at, std::string updated_at, UserModel creator, UserModel buyer) : _id(id), _creator_id(creator_id), _buyer_id(buyer_id), _title(title), _description(description), _price(price), _status(status), _type(type), _image_url(image_url), _created_at(created_at), _updated_at(updated_at), _creator(creator), _buyer(buyer) {}
 
 std::string ServiceModel::get_id() const { return _id; }
-std::string ServiceModel::get_community_id() const { return _community_id; }
 std::string ServiceModel::get_creator_id() const { return _creator_id; }
 std::optional<std::string> ServiceModel::get_buyer_id() const { return _buyer_id; }
 std::string ServiceModel::get_title() const { return _title; }
@@ -14,11 +15,13 @@ std::string ServiceModel::get_type() const { return _type; }
 std::optional<std::string> ServiceModel::get_image_url() const { return _image_url; }
 std::string ServiceModel::get_created_at() const { return _created_at; }
 std::string ServiceModel::get_updated_at() const { return _updated_at; }
+UserModel ServiceModel::get_creator() const { return _creator; };
+UserModel ServiceModel::get_buyer() const { return _buyer; };
 
-std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db, const std::string& community_id, const std::string& creator_id, const std::string& title, const std::string& description, const int price, const std::string& type, const std::optional<std::string>& image_url, bool isThrow) {
+std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db, const std::string& creator_id, const std::string& title, const std::string& description, const int price, const std::string& type, const std::optional<std::string>& image_url, bool isThrow) {
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec_params("INSERT INTO services (community_id, creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, community_id, creator_id, buyer_id, title, description, price, status, type, image_url, created_at, updated_at", community_id, creator_id, title, description, price, type);
+	pqxx::result result = txn.exec_params("INSERT INTO services (creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5) RETURNING id,  creator_id, buyer_id, title, description, price, status, type, image_url, created_at, updated_at", creator_id, title, description, price, type);
 
 	txn.commit();
 
@@ -42,7 +45,6 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 
 	return std::make_unique<ServiceModel>(
 		result[0]["id"].as<std::string>(),
-		result[0]["community_id"].as<std::string>(),
 		result[0]["creator_id"].as<std::string>(),
 		buyer_id_field,
 		result[0]["title"].as<std::string>(),
@@ -54,13 +56,55 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 		result[0]["created_at"].as<std::string>(),
 		result[0]["updated_at"].as<std::string>());
 }
-
-std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_open_services_by_community_id(pqxx::connection& db, const std::string& community_id) {
+std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::connection& db, const std::string& community_id, const std::string& status) {
 	std::vector<std::unique_ptr<ServiceModel>> all_services;
 
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec_params("SELECT id, community_id, creator_id, buyer_id, title, description, price, status, type, image_url, created_at, updated_at FROM services WHERE community_id = $1", community_id);
+	std::string query =
+		"SELECT s.id AS service_id, "
+		"s.creator_id, "
+		"s.buyer_id, "
+		"s.title, "
+		"s.description, "
+		"s.price, "
+		"s.status, "
+		"s.type, "
+		"s.image_url, "
+		"s.created_at, "
+		"s.updated_at, "
+		"uc.id AS creator_id, "
+		"uc.community_id AS creator_community_id, "
+		"uc.username AS creator_username, "
+		"uc.email AS creator_email, "
+		"uc.type AS creator_type, "
+		"uc.balance AS creator_balance, "
+		"uc.created_at AS creator_created_at, "
+		"uc.updated_at AS creator_updated_at, "
+		"ub.id AS buyer_id, "
+		"ub.community_id AS buyer_community_id, "
+		"ub.username AS buyer_username, "
+		"ub.email AS buyer_email, "
+		"ub.type AS buyer_type, "
+		"ub.balance AS buyer_balance, "
+		"ub.created_at AS buyer_created_at, "
+		"ub.updated_at AS buyer_updated_at "
+		"FROM services AS s "
+		"JOIN users AS uc ON s.creator_id = uc.id "
+		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
+		"WHERE uc.community_id = $1";
+
+	// Agregar filtro de status si se proporciona
+	if (!status.empty()) {
+		query += " AND s.status = $2";
+	}
+
+	pqxx::result result;
+	if (!status.empty()) {
+		result = txn.exec_params(query, community_id, status);
+	} else {
+		result = txn.exec_params(query, community_id);
+	}
 
 	txn.commit();
 
@@ -76,9 +120,34 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_open_services_by_co
 		else
 			image_url_field = std::nullopt;
 
+		// Crear instancia de UserModel para el creador
+		UserModel creator(
+			row["creator_id"].as<std::string>(),
+			row["creator_community_id"].as<std::string>(),
+			row["creator_username"].as<std::string>(),
+			row["creator_email"].as<std::string>(),
+			row["creator_type"].as<std::string>(),
+			row["creator_balance"].as<int>(),
+			row["creator_created_at"].as<std::string>(),
+			row["creator_updated_at"].as<std::string>());
+
+		// Crear instancia de UserModel para el comprador, si existe
+		UserModel buyer;
+		if (buyer_id_field) {
+			buyer = UserModel(
+				row["buyer_id"].as<std::string>(),
+				row["buyer_community_id"].as<std::string>(),
+				row["buyer_username"].as<std::string>(),
+				row["buyer_email"].as<std::string>(),
+				row["buyer_type"].as<std::string>(),
+				row["buyer_balance"].as<int>(),
+				row["buyer_created_at"].as<std::string>(),
+				row["buyer_updated_at"].as<std::string>());
+		}
+
+		// Crear instancia de ServiceModel con UserModel como argumento adicional
 		all_services.push_back(std::make_unique<ServiceModel>(
-			row["id"].as<std::string>(),
-			row["community_id"].as<std::string>(),
+			row["service_id"].as<std::string>(),
 			row["creator_id"].as<std::string>(),
 			buyer_id_field,
 			row["title"].as<std::string>(),
@@ -88,7 +157,9 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_open_services_by_co
 			row["type"].as<std::string>(),
 			image_url_field,
 			row["created_at"].as<std::string>(),
-			row["updated_at"].as<std::string>()));
+			row["updated_at"].as<std::string>(),
+			creator,
+			buyer));
 	}
 
 	return all_services;
