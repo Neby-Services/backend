@@ -1,5 +1,8 @@
 #include <models/user_model.h>
 
+UserModel::UserModel() : _id("") {}
+UserModel::UserModel(std::string id, std::string username) : _id(id), _username(username) {}
+
 UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at) {}
 
 std::string UserModel::get_id() const { return _id; }
