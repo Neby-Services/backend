@@ -1,11 +1,13 @@
-#include <common.h>
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
+
 #include <cstdlib>	// Para std::getenv
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
+
+#include "../common.h"
 
 // Declaración de la función limpiarTablaUsers
 void limpiarTablaUsers() {
@@ -349,7 +351,7 @@ TEST_F(RegisterGeneralErrors, UserAlredyExist) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_email = json["error"];
-	EXPECT_EQ(error_message_email, "user already exists");
+	EXPECT_EQ(error_message_email, "email already in use");
 	EXPECT_EQ(response_email.status_code, 400);
 
 	auto response_username = cpr::Post(cpr::Url{url}, cpr::Body{user_exist_username.dump()}, cpr::Header{{"Content-Type", "application/json"}});
@@ -358,7 +360,7 @@ TEST_F(RegisterGeneralErrors, UserAlredyExist) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_username = json["error"];
-	EXPECT_EQ(error_message_username, "user already exists");
+	EXPECT_EQ(error_message_username, "email already in use");
 	EXPECT_EQ(response_username.status_code, 400);
 }
 
@@ -408,5 +410,5 @@ TEST_F(RegisterGeneralErrors, Community_Not_Exists) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_username = json["error"];
-	EXPECT_EQ(error_message_username, "not community exists");
+	EXPECT_EQ(error_message_username, "community does not exist");
 }
