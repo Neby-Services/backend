@@ -14,8 +14,6 @@ TEST(GET_SERVICES, first) {
 
 	auto response = cpr::Get(cpr::Url{url}, cpr::Cookies{{"token", register_and_get_user_token()}});
 
-	std::cout << " test -> " << response.text << std::endl;
-
 	EXPECT_EQ(response.status_code, 200) << "expect 200 status code";
 
 	auto json = nlohmann::json::parse(response.text);
@@ -27,4 +25,3 @@ TEST(GET_SERVICES, first) {
 	clean_user_table();
 	clean_community_table();
 }
-

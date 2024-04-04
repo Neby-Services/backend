@@ -1,6 +1,7 @@
 #include <controllers/auth_controller.h>
 #include <utils/auth.h>
 #include <utils/user_validations.h>
+
 #include <bcrypt/BCrypt.hpp>
 #include <ctime>  // Include the ctime header for time functions
 #include <iomanip>
@@ -133,17 +134,17 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 
 			res.set_header("Set-Cookie", cookieStream.str());
 
-			crow::json::wvalue data;
-			data["user"] = {
-				{"id", user.get()->get_id()},
-				{"type", user.get()->get_type()}};
+			crow::json::wvalue data(
+				{
+					{"id", user.get()->get_id()},
+				});
 
 			res.code = 200;
 			res.write(data.dump());
 
 			res.end();
 		} else {
-			handle_error(res, "password invalid", 400);
+			handle_error(res, "invalid password", 400);
 			return;
 		}
 
