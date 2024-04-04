@@ -38,8 +38,7 @@ void limpiarTablaUsers() {
 class RegisterValidations : public ::testing::Test {
 	protected:
 	void TearDown() override {
-		// Llamar a la función limpiarTablaUsers después de que se complete el test
-		limpiarTablaUsers();
+		clean_user_table();
 	}
 };
 
@@ -360,7 +359,7 @@ TEST_F(RegisterGeneralErrors, UserAlredyExist) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_username = json["error"];
-	EXPECT_EQ(error_message_username, "email already in use");
+	EXPECT_EQ(error_message_username, "email already in use"); 
 	EXPECT_EQ(response_username.status_code, 400);
 }
 
@@ -410,5 +409,5 @@ TEST_F(RegisterGeneralErrors, Community_Not_Exists) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_username = json["error"];
-	EXPECT_EQ(error_message_username, "community does not exist");
+	EXPECT_EQ(error_message_username, "community does not exists");
 }

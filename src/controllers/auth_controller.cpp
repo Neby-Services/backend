@@ -40,7 +40,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		} else if (type == Roles::NEIGHBOR) {
 			std::unique_ptr<CommunityModel> community = CommunityModel::get_community_by_code(db, body["community_code"].s());
 			if (!community) {
-				handle_error(res, "community does not exist", 404);
+				handle_error(res, "community does not exists", 404);
 				return;
 			}
 			community_id = community.get()->get_id();
