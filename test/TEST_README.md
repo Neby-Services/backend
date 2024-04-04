@@ -1,5 +1,15 @@
 # Integration Testing for C++ Server
 
+## Table of Contents
+1. [Project Description](#project-description)
+2. [Tools Used](#tools-used)
+3. [Project Objective](#project-objective)
+4. [Project Structure](#project-structure)
+5. [Running the Tests](#running-the-tests)
+    - [Method 1: Automated Execution with Docker](#method-1-automated-execution-with-docker)
+    - [Method 2: Manual Execution within the Container](#method-2-manual-execution-within-the-container)
+6. [Tests Organization](#tests-organization)
+
 ## Project Description
 
 This project focuses on performing integration tests for all endpoints of a server implemented in C++. Integration tests are a type of test that verify the interaction between various components of a system to ensure their proper functioning together.
@@ -49,9 +59,7 @@ To execute the integration tests, there are two different ways to run the tests:
    ```bash
    docker exec -it test bash
    ```
-2. Within the container, you can run the tests you're interested in. For example, if your tests have the following structure TEST(suite_name, test_name):
-
-3. Within the container, you can run the tests you're interested in. For example, if your tests have the following structure `TEST(suite_name, test_name)`:
+2. Within the container, you can run the tests you're interested in. For example, if your tests have the following structure `TEST(suite_name, test_name)`:
    - change to the test directory:
    ```bash
    cd test
@@ -67,4 +75,13 @@ To execute the integration tests, there are two different ways to run the tests:
 
 These methods allow you to execute the integration tests automatically or manually, depending on your needs and preferences. The second method is useful when you only need to run specific tests within the project due to time constraints or other considerations.
 
+## Tests Organization
 
+### Auth
+- ["GET /api/auth/register"](tests/auth/lgoin.md)
+
+### Users
+
+### Services 
+
+### Notifications
