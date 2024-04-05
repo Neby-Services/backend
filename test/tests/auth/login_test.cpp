@@ -9,7 +9,96 @@
 
 #include "../common.h"
 
-TEST(LOGIN_ERRORS, email_not_exists) {
+class LoginTest : public testing::Test {
+	protected:
+	std::string email_;
+	std::string password_;
+
+	void SetUp() override {
+		email_ = "example@gmail.com";
+		password_ = "P@ssw0rd!";
+
+		std::string url_register = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+		nlohmann::json new_user = {
+			{"email", email_},
+			{"username", "tupapiloko"},
+			{"password", password_},
+			{"type", "admin"},
+			{"community_name", "example_community_name"}};
+
+		auto r_register = cpr::Post(cpr::Url{url_register}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+	}
+
+	void TearDown() override {
+		clean_user_table();
+		clean_community_table();
+	}
+};
+
+class LoginErrorsTest : public testing::Test {
+	protected:
+	std::string email_;
+	std::string password_;
+
+	void SetUp() override {
+		email_ = "example@gmail.com";
+		password_ = "P@ssw0rd!";
+
+		std::string url_register = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
+		nlohmann::json new_user = {
+			{"email", email_},
+			{"username", "tupapiloko"},
+			{"password", password_},
+			{"type", "admin"},
+			{"community_name", "example_community_name"}};
+
+		auto r_register = cpr::Post(cpr::Url{url_register}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+	}
+
+	void TearDown() override {
+		clean_user_table();
+		clean_community_table();
+	}
+};
+
+TEST_F(LoginTest, correct_login) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
+	nlohmann::json post_data = {
+		{"email", email_},
+		{"password", password_},
+	};
+
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+	auto json = nlohmann::json::parse(response.text);
+
+	EXPECT_EQ(response.status_code, 200);
+	ASSERT_TRUE(json.contains("id"));
+	ASSERT_TRUE(json["id"].is_string());
+
+	std::string set_cookie_header = response.header["Set-Cookie"];
+	size_t token_pos = set_cookie_header.find("token=");
+	bool token_found = token_pos != std::string::npos;
+
+	EXPECT_TRUE(token_found);
+}
+
+// Prueba de inicio de sesión con contraseña incorrecta
+TEST_F(LoginErrorsTest, incorrect_password) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
+	nlohmann::json post_data = {
+		{"email", email_},
+		{"password", "Incorrect_password1"},
+	};
+
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+	auto json = nlohmann::json::parse(response.text);
+
+	ASSERT_TRUE(json.contains("error"));
+	EXPECT_EQ(json["error"], "invalid password");
+	EXPECT_EQ(response.status_code, 400);
+}
+
+TEST_F(LoginErrorsTest, email_not_exists) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 
 	nlohmann::json post_data = {
@@ -28,89 +117,81 @@ TEST(LOGIN_ERRORS, email_not_exists) {
 	EXPECT_EQ(response.status_code, 404);
 }
 
-TEST(LOGIN_ERRORS, incorrect_password) {
-	// * Before_test
-	std::string url_register = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
-
-	std::string email = "example@gmail.com";
-	std::string password = "P@ssw0rd!";
-
-	nlohmann::json new_user = {
-		{"email", email},
-		{"username", "tupapiloko"},
-		{"password", password},
-		{"type", "admin"},
-		{"community_name", "example_community_name"}};
-
-	auto r_register = cpr::Post(cpr::Url{url_register}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
-
-	// * Test
-
+TEST(LoginValidationInputTest, IncorrectEmail) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 
-	nlohmann::json post_data = {
-		{"email", email},
-		{"password", "Incorrect_password1"},
-	};
+	// Lista de direcciones de correo electrónico incorrectas
+	std::vector<std::string> incorrect_emails = {
+		"example%@gmail.com",
+		"example@domain.",
+		"example@domain123",
+		"example@domain,com",
+		"example@domain.com.",
+		"example@@domain.com",
+		"example@domain..com",
+		"example@@domain..com",
+		"example@domain_com",
+		"example@domain.com_com"};
 
-	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+	for (const auto& email : incorrect_emails) {
+		nlohmann::json post_data = {
+			{"email", email},
+			{"password", "F!sh1ngR0ck5"}};
 
-	auto json = nlohmann::json::parse(response.text);
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
-	ASSERT_TRUE(json.contains("error"));
-
-	EXPECT_EQ(json["error"], "invalid password");
-
-	EXPECT_EQ(response.status_code, 400);
-
-	// * After_test
-	clean_user_table();
-	clean_community_table();
+		EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect email: " << email;
+	}
 }
 
-TEST(LOGIN, correct_login) {
-	// * Before_test
-	std::string url_register = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
-
-	std::string email = "example@gmail.com";
-	std::string password = "P@ssw0rd!";
-
-	nlohmann::json new_user = {
-		{"email", email},
-		{"username", "tupapiloko"},
-		{"password", password},
-		{"type", "admin"},
-		{"community_name", "example_community_name"}};
-
-	auto r_register = cpr::Post(cpr::Url{url_register}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
-
-	// * Test
-
+TEST(LoginValidationInputTest, Incorrect_Password) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 
+	// Lista de direcciones de correo electrónico incorrectas
+	std::vector<std::string> incorrect_passwords = {
+		"password", "12345678", "qwerty", "letmein", "abc123"};
+
+	for (const auto& password : incorrect_passwords) {
+		nlohmann::json post_data = {
+			{"email", "example@gmail.com"},
+			{"password", password}};
+
+		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+
+		auto json = nlohmann::json::parse(response.text);
+
+		EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for incorrect password: " << password;
+		EXPECT_TRUE(json.contains("error"));
+		EXPECT_EQ(json["error"], "incorrect password");
+	}
+}
+
+TEST(LoginValidationInputTest, missing_email) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 	nlohmann::json post_data = {
-		{"email", email},
-		{"password", password},
+		{"password", "Hola123."},
 	};
 
 	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
 	auto json = nlohmann::json::parse(response.text);
 
-	EXPECT_EQ(response.status_code, 200);
-	ASSERT_TRUE(json.contains("id"));
-	ASSERT_TRUE(json["id"].is_string());
+	EXPECT_EQ(response.status_code, 404);
+	EXPECT_TRUE(json.contains("error"));
+	EXPECT_EQ(json["error"], "missing email field");
+}
 
-	std::string set_cookie_header = response.header["Set-Cookie"];
+TEST(LoginValidationInputTest, missing_password) {
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
+	nlohmann::json post_data = {
+		{"email", "example_email@gmail.com"},
+	};
 
-	// Buscar la cookie "token" dentro del encabezado "Set-Cookie"
-	size_t token_pos = set_cookie_header.find("token=");
-	bool token_found = token_pos != std::string::npos;
+	auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
-	// Verificar que se encontró la cookie "token"
-	EXPECT_TRUE(token_found);
+	auto json = nlohmann::json::parse(response.text);
 
-	// * After_test
-	clean_user_table();
-	clean_community_table();
+	EXPECT_EQ(response.status_code, 404);
+	EXPECT_TRUE(json.contains("error"));
+	EXPECT_EQ(json["error"], "missing password field");
 }

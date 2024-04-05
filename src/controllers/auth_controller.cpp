@@ -87,16 +87,6 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 void AuthController::login_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
-		/* 	crow::json::rvalue body = crow::json::load(req.body);
-
-			std::string id = body["id"].s();
-
-			crow::json::wvalue data({{"id", id}});
-
-			res.code = 200;
-			res.write(data.dump());
-
-			res.end(); */
 		if (!is_correct_body_login(req, res)) return;
 
 		crow::json::rvalue body = crow::json::load(req.body);
