@@ -125,7 +125,7 @@ void UserController::update_user_by_id(pqxx::connection &db, const crow::request
 void UserController::update_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
 		crow::json::rvalue update = crow::json::load(req.body);
-		user_id = update[id].s();
+		std::string user_id = update["id"].s();
 		std::string temp_name = "", temp_pass = "", temp_email = "";
 		if (update.has("username")) {
 			temp_name = update["username"].s();
