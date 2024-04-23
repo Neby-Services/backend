@@ -45,6 +45,8 @@ class ServiceModel {
 	UserModel get_buyer() const;
 
 	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, const std::string& creator_id, const std::string& title, const std::string& description, const int price, const std::string& type, const std::optional<std::string>& image_url, bool isThrow = false);
+	static std::unique_ptr<ServiceModel> get_service_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
 
 	static std::vector<std::unique_ptr<ServiceModel>> get_services(pqxx::connection& db, const std::string& community_id, const std::string& status = "");
+	static bool delete_service_by_id(pqxx::connection& db, const std::string id);
 };

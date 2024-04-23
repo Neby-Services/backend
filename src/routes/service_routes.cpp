@@ -18,4 +18,8 @@ void initialize_service_routes(NebyApp& app, pqxx::connection& db) {
 	// ** PUT /api/services/:id
 
 	// ** DELETE /api/services/:id
+
+	CROW_ROUTE(app, "/api/services/<string>").methods(crow::HTTPMethod::DELETE).CROW_MIDDLEWARES(app, VerifyJWT)([&db](const crow::request& req, crow::response& res, std::string& service_id) {
+		ServiceController::delete_service(db, req, res, service_id);
+	});
 }
