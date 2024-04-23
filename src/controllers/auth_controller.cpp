@@ -1,6 +1,7 @@
 #include <controllers/auth_controller.h>
 #include <utils/auth.h>
 #include <utils/user_validations.h>
+
 #include <bcrypt/BCrypt.hpp>
 #include <ctime>  // Include the ctime header for time functions
 #include <iomanip>
@@ -40,7 +41,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		} else if (type == Roles::NEIGHBOR) {
 			std::unique_ptr<CommunityModel> community = CommunityModel::get_community_by_code(db, body["community_code"].s());
 			if (!community) {
-				handle_error(res, "community does not exist", 404);
+				handle_error(res, "community does not exists", 404);
 				return;
 			}
 			community_id = community.get()->get_id();
@@ -86,16 +87,6 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 void AuthController::login_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
-		/* 	crow::json::rvalue body = crow::json::load(req.body);
-
-			std::string id = body["id"].s();
-
-			crow::json::wvalue data({{"id", id}});
-
-			res.code = 200;
-			res.write(data.dump());
-
-			res.end(); */
 		if (!is_correct_body_login(req, res)) return;
 
 		crow::json::rvalue body = crow::json::load(req.body);
@@ -133,17 +124,17 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 
 			res.set_header("Set-Cookie", cookieStream.str());
 
-			crow::json::wvalue data;
-			data["user"] = {
-				{"id", user.get()->get_id()},
-				{"type", user.get()->get_type()}};
+			crow::json::wvalue data(
+				{
+					{"id", user.get()->get_id()},
+				});
 
 			res.code = 200;
 			res.write(data.dump());
 
 			res.end();
 		} else {
-			handle_error(res, "password invalid", 400);
+			handle_error(res, "invalid password", 400);
 			return;
 		}
 

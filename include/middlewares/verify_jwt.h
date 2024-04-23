@@ -11,6 +11,11 @@ struct VerifyJWT : crow::ILocalMiddleware {
 	void before_handle(crow::request& req, crow::response& res, context& ctx) {
 		std::string token = get_token_cookie(req);
 
+		if (token == "") {
+			handle_error(res, "not token provided", 404);
+			return;
+		}
+
 		if (!validate_token(token)) {
 			handle_error(res, "invalid token", 401);
 			return;
