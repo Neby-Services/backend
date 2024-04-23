@@ -121,3 +121,36 @@ void UserController::update_user_by_id(pqxx::connection &db, const crow::request
 		handle_error(res, "internal server error", 500);
 	}
 }
+
+void UserController::update_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
+		crow::json::rvalue update = crow::json::load(req.body);
+		std::string user_id = update["id"].s();
+		std::string temp_name = "", temp_pass = "", temp_email = "";
+		if (update.has("username")) {
+			temp_name = update["username"].s();
+			if (!validate_username(temp_name, res)) return;
+		}
+		if (update.has("email")) {
+			temp_email = update["email"].s();
+			if (!validate_email(temp_email, res)) return;
+		}
+		if (update.has("password")) {
+			temp_pass = update["password"].s();
+			if (!validate_password(temp_pass, res)) return;
+		}
+		std::string hash = BCrypt::generateHash(temp_pass);
+		bool succes = UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash);
+		if (succes) {
+			res.code = 200;
+			crow::json::wvalue response_message;
+			response_message["message"] = "User updated successfully";
+			res.write(response_message.dump());
+			res.end();
+		} else
+			handle_error(res, "internal server error", 500);
+	} catch (const std::exception &e) {
+		std::cerr << "Error updating user: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
+	}
+}
