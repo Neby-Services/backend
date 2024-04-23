@@ -82,7 +82,6 @@ TEST_F(LoginTest, correct_login) {
 	EXPECT_TRUE(token_found);
 }
 
-// Prueba de inicio de sesión con contraseña incorrecta
 TEST_F(LoginErrorsTest, incorrect_password) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 	nlohmann::json post_data = {
@@ -117,7 +116,7 @@ TEST_F(LoginErrorsTest, email_not_exists) {
 	EXPECT_EQ(response.status_code, 404);
 }
 
-TEST(LoginValidationInputTest, IncorrectEmail) {
+TEST(LoginValidationInputTest, incorrect_email) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 
 	// Lista de direcciones de correo electrónico incorrectas
@@ -144,10 +143,9 @@ TEST(LoginValidationInputTest, IncorrectEmail) {
 	}
 }
 
-TEST(LoginValidationInputTest, Incorrect_Password) {
+TEST(LoginValidationInputTest, incorrect_password) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/login";
 
-	// Lista de direcciones de correo electrónico incorrectas
 	std::vector<std::string> incorrect_passwords = {
 		"password", "12345678", "qwerty", "letmein", "abc123"};
 

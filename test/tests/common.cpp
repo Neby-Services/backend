@@ -22,7 +22,6 @@ void clean_user_table() {
 			pqxx::work txn(conn);
 
 			txn.exec("DELETE FROM users");
-			txn.exec("DELETE FROM communities");
 
 			txn.commit();
 
@@ -60,20 +59,17 @@ std::string create_user_test() {
 		try {
 			pqxx::work txn(conn);
 
-			// Sample user data (replace with your actual user data)
 			std::string username = "test_user";
 			std::string email = "test@example.com";
 			std::string password = "password123";
 			std::string image_url = "https://example.com/image.jpg";
 			std::string type = "neighbor";	// or "admin" depending on the user's type
 
-			// Insert user into the database
 			pqxx::result result = txn.exec_params("INSERT INTO users (username, email, password, image_url, type) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 												  username, email, password, image_url, type);
 
 			txn.commit();
 
-			// Return the ID of the newly created user
 			return result[0][0].as<std::string>();
 		} catch (const std::exception& e) {
 			std::cerr << "Error creating user: " << e.what() << std::endl;
@@ -82,7 +78,7 @@ std::string create_user_test() {
 		std::cerr << "Error connecting to the database." << std::endl;
 	}
 
-	return "";	// Return empty string if user creation fails
+	return "";	
 }
 
 void create_services() {
@@ -94,15 +90,12 @@ void create_services() {
 		try {
 			pqxx::work txn(conn);
 
-			// Create 5 example services for testing
 			for (int i = 1; i <= 5; ++i) {
-				// Sample service data (replace with your actual service data)
 				std::string title = "Service " + std::to_string(i);
 				std::string description = "Description of service " + std::to_string(i);
-				int price = 100 * i;			 // Sample price
-				std::string type = "REQUESTED";	 // or "OFFERED" depending on the service type
+				int price = 100 * i;			 
+				std::string type = "REQUESTED";	 
 
-				// Insert service into the database
 				txn.exec_params("INSERT INTO services (creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5)",
 								user_id, title, description, price, type);
 			}
@@ -140,7 +133,6 @@ std::string register_and_get_user_token() {
 
 		return token_value;
 	} else {
-		// La cookie "token" no se encontró en el encabezado
-		return "";	// Devolver un valor por defecto o manejar el error según sea necesario
+		return "";	
 	}
 }
