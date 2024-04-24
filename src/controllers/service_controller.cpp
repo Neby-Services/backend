@@ -135,11 +135,12 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 			std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id);
 
 			if (!service) {
-				handle_error(res, "service not found", 404);
+				handle_error(res, "service no.t found", 404);
 				return;
 			}
 
 			std::string service_creator_id = service.get()->get_creator_id();
+			std::cout << service_creator_id << std::endl;
 
 			std::unique_ptr<UserModel> creator = UserModel::get_user_by_id(db, service_creator_id);
 			std::string service_community = creator.get()->get_community_id();
@@ -148,13 +149,10 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 			std::string admin_community = admin.get()->get_community_id();
 
 			if (service_community == admin_community) {
-				bool deleted = ServiceModel::delete_service_by_id(db, service_id);
+				std::unique_ptr<ServiceModel> deleted_service = ServiceModel::delete_service_by_id(db, service_id);
 
-				if (deleted) {
-					res.code = 200;
-					crow::json::wvalue response_message;
-					response_message["message"] = "service deleted successfully";
-					res.write(response_message.dump());
+				if (deleted_service) {
+					res.code = 204;
 					res.end();
 				} else
 					handle_error(res, "service not found", 404);

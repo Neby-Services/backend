@@ -30,6 +30,8 @@ class ServiceModel {
 
 	ServiceModel(std::string id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::string created_at, std::string updated_at, UserModel creator, UserModel buyer);
 
+	ServiceModel(std::string id);
+
 	std::string get_id() const;
 	std::string get_creator_id() const;
 	std::optional<std::string> get_buyer_id() const;
@@ -48,5 +50,5 @@ class ServiceModel {
 	static std::unique_ptr<ServiceModel> get_service_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
 
 	static std::vector<std::unique_ptr<ServiceModel>> get_services(pqxx::connection& db, const std::string& community_id, const std::string& status = "");
-	static bool delete_service_by_id(pqxx::connection& db, const std::string id);
+	static std::unique_ptr<ServiceModel> delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null = false);
 };
