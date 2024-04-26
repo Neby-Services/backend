@@ -145,8 +145,11 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 		if ((service_community == admin_community && request["isAdmin"].b() == true) || service_creator_id == request["id"].s()) {
 			std::unique_ptr<ServiceModel> deleted_service = ServiceModel::delete_service_by_id(db, service_id);
 
-			if (deleted_service) {
+			if (true) {
 				res.code = 204;
+				crow::json::wvalue response_message;
+				response_message["message"] = "service deleted successfully";
+				res.write(response_message.dump());
 				res.end();
 			} else {
 				handle_error(res, "service not found", 404);
