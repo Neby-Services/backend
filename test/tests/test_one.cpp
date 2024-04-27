@@ -1,11 +1,9 @@
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
-
 #include <cstdlib>	// Para std::getenv
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
-
 
 int sum(int a, int b) {
 	return a + b;

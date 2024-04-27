@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utils/errors.h>
-
 #include <format>
 #include <iostream>
 #include <memory>
@@ -13,7 +12,7 @@ class UserModel {
 	private:
 	std::string _id;
 	std::string _community_id;
-	std::string _username; 
+	std::string _username;
 	std::string _email;
 	std::string _type;
 	int _balance;

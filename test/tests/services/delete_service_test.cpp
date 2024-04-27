@@ -1,20 +1,18 @@
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
-
 #include <cstdlib>	// Para std::getenv
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
-
 #include "../common.h"
 /*
 
 TEST if user not authentication with jwt
 status_code = 401
 
- */
+*/
 
 TEST(DeleteServiceAuth, delete_service_not_auth) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/uuidexample";
@@ -38,7 +36,7 @@ res.body = 'not enough priviligies';
 	// 3. crear un usuario neighbor
 	// 4. token neighbor
 	// 5. haces la peticion de eliminar el primer sericio
-  */
+*/
 class DeleteServiceNeitherAuth : public testing::Test {
 	protected:
 	std::string _service_id_;
@@ -156,11 +154,11 @@ TEST_F(DeleteServiceNeitherAuth, delete_service_Neither) {
 }
 
 /*
-	TEST if user is auth, exists 2 community (A y B), the user is admin of A, and services deleted is B community
-	so
-	status = 403
-	res.body = user without admin privileges or not creator of service
- */
+TEST if user is auth, exists 2 community (A y B), the user is admin of A, and services deleted is B community
+so
+status = 403
+res.body = user without admin privileges or not creator of service
+*/
 class DeleteServiceAdminBAuth : public testing::Test {
 	protected:
 	std::string _service_id_;
@@ -257,9 +255,9 @@ TEST_F(DeleteServiceAdminBAuth, delete_service_AdminB) {
 	EXPECT_EQ(json["error"], "user without admin privileges or not creator of service");
 }
 /*
-   TEST if user is auth, not admin, but the user is creator of service
-   status_code = 204
- */
+TEST if user is auth, not admin, but the user is creator of service
+status_code = 204
+*/
 class DeleteServiceCreatorAuth : public testing::Test {
 	protected:
 	std::string _service_id_;
@@ -380,7 +378,7 @@ TEST_F(DeleteServiceCreatorAuth, delete_service_creator) {
 TEST if user is admin and auth but service not found
 status_code = 404
 res.body = 'service not found'
- */
+*/
 class DeleteServiceNotFoundAuth : public testing::Test {
 	protected:
 	std::string _admin_token_;
@@ -436,7 +434,7 @@ TEST_F(DeleteServiceNotFoundAuth, delete_service_not_found) {
 TEST if user is admin and auth,and service exists
 status_code = 204
 res.body = ''
- */
+*/
 class DeleteServiceAdminAuth : public testing::Test {
 	protected:
 	std::string _service_id_;

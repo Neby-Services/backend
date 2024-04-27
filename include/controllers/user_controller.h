@@ -5,7 +5,6 @@
 #include <utils/errors.h>
 #include <utils/user_validations.h>
 #include <utils/utils.h>
-
 #include <format>
 #include <pqxx/pqxx>
 #include <string>

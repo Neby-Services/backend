@@ -1,7 +1,6 @@
 #include <controllers/auth_controller.h>
 #include <utils/auth.h>
 #include <utils/user_validations.h>
-
 #include <bcrypt/BCrypt.hpp>
 #include <ctime>  // Include the ctime header for time functions
 #include <iomanip>

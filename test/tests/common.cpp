@@ -1,5 +1,4 @@
 #include "common.h"
-
 #include <cstdlib>	// Para std::getenv
 #include <format>
 #include <iostream>
