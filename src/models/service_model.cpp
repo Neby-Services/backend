@@ -4,8 +4,6 @@ ServiceModel::ServiceModel(std::string id, std::string creator_id, std::optional
 
 ServiceModel::ServiceModel(std::string id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::string created_at, std::string updated_at, UserModel creator, UserModel buyer) : _id(id), _creator_id(creator_id), _buyer_id(buyer_id), _title(title), _description(description), _price(price), _status(status), _type(type), _image_url(image_url), _created_at(created_at), _updated_at(updated_at), _creator(creator), _buyer(buyer) {}
 
-ServiceModel::ServiceModel(std::string id) : _id(id) {}
-
 std::string ServiceModel::get_id() const { return _id; }
 std::string ServiceModel::get_creator_id() const { return _creator_id; }
 std::optional<std::string> ServiceModel::get_buyer_id() const { return _buyer_id; }

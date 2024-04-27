@@ -1,7 +1,6 @@
 #pragma once
 
 #include <crow.h>
-
 #include <format>
 #include <memory>
 #include <pqxx/pqxx>
