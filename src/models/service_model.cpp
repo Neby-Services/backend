@@ -164,3 +164,73 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 
 	return all_services;
 }
+
+std::unique_ptr<ServiceModel> get_service(pqxx::connection& db, const std::string& column, const std::string& value, bool throw_when_null) {
+	pqxx::work txn(db);
+	pqxx::result result = txn.exec_params(std::format("SELECT * FROM services WHERE {} = $1", column), value);
+	txn.commit();
+
+	if (result.empty()) {
+		if (throw_when_null)
+			throw data_not_found_exception("service not found");
+		else
+			return nullptr;
+	}
+	std::cout << "id: " << result[0]["id"].as<std::string>() << std::endl;
+	std::cout << "creator_id: " << result[0]["creator_id"].as<std::string>() << std::endl;
+	std::cout << "title: " << result[0]["title"].as<std::string>() << std::endl;
+	std::cout << "description: " << result[0]["description"].as<std::string>() << std::endl;
+	std::cout << "price: " << result[0]["price"].as<int>() << std::endl;
+	std::cout << "status: " << result[0]["status"].as<std::string>() << std::endl;
+	std::cout << "type: " << result[0]["type"].as<std::string>() << std::endl;
+	std::cout << "created_at: " << result[0]["created_at"].as<std::string>() << std::endl;
+	std::cout << "updated_at: " << result[0]["updated_at"].as<std::string>() << std::endl;
+	std::optional<std::string> buyer_id_field;
+	std::optional<std::string> image_url_field;
+	if (!result[0]["buyer_id"].is_null())
+		buyer_id_field = result[0]["buyer_id"].as<std::string>();
+	else
+		buyer_id_field = std::nullopt;
+	if (!result[0]["image_url"].is_null())
+		image_url_field = result[0]["image_url"].as<std::string>();
+	else
+		image_url_field = std::nullopt;
+	return std::make_unique<ServiceModel>(
+		result[0]["id"].as<std::string>(),
+		result[0]["creator_id"].as<std::string>(),
+		buyer_id_field,
+		result[0]["title"].as<std::string>(),
+		result[0]["description"].as<std::string>(),
+		result[0]["price"].as<int>(),
+		result[0]["status"].as<std::string>(),
+		result[0]["type"].as<std::string>(),
+		image_url_field,
+		result[0]["created_at"].as<std::string>(),
+		result[0]["updated_at"].as<std::string>());
+}
+
+std::unique_ptr<ServiceModel> ServiceModel::get_service_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
+	return get_service(db, "id", id, throw_when_null);
+}
+
+std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("DELETE FROM services WHERE id = $1 RETURNING id", id);
+
+		txn.commit();
+
+		if (result.empty()) {
+			if (throw_when_null)
+				throw data_not_found_exception("service not found");
+			else
+				return nullptr;
+		}
+		return std::make_unique<ServiceModel>(result[0]["id"].as<std::string>());
+
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to delete service: " << e.what() << std::endl;
+		return nullptr;
+	}
+}
