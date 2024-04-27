@@ -127,9 +127,10 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 	try {
 		crow::json::rvalue request = crow::json::load(req.body);
 		// if (request["isAdmin"].b() == true) {
-		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id);
 
-		if (!service) {
+		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id, false);
+	
+		if (service == nullptr) {
 			handle_error(res, "service not found", 404);
 			return;
 		}
@@ -143,16 +144,14 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 		std::string admin_community = admin.get()->get_community_id();
 
 		if ((service_community == admin_community && request["isAdmin"].b() == true) || service_creator_id == request["id"].s()) {
-			std::unique_ptr<ServiceModel> deleted_service = ServiceModel::delete_service_by_id(db, service_id);
-
-			if (true) {
-				res.code = 204;
-				crow::json::wvalue response_message;
-				response_message["message"] = "service deleted successfully";
-				res.write(response_message.dump());
+			std::unique_ptr<ServiceModel> deleted_service = ServiceModel::delete_service_by_id(db, service_id);	
+			if (deleted_service) {
+				crow::json::wvalue message({{"message", "service deleted succesfully"}});
+				res.write(message.dump());
+				res.code = 200;
 				res.end();
 			} else {
-				handle_error(res, "service not found", 404);
+				handle_error(res, "could not delete service", 400);
 				return;
 			}
 		} else {
@@ -162,6 +161,6 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 
 	} catch (const std::exception &e) {
 		std::cerr << "Error deleting service: " << e.what() << std::endl;
-		handle_error(res, "internal server error", 500);
+		handle_error(res, "Error deleting service", 500);
 	}
 }
