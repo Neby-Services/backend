@@ -1,6 +1,7 @@
 #include <controllers/auth_controller.h>
 #include <utils/auth.h>
 #include <utils/user_validations.h>
+
 #include <bcrypt/BCrypt.hpp>
 #include <ctime>  // Include the ctime header for time functions
 #include <iomanip>
@@ -140,5 +141,34 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 	} catch (const std::exception &e) {
 		std::cerr << "Error in register_user: " << e.what() << std::endl;
 		handle_error(res, "INTERNAL SERVER ERROR", 500);
+	}
+}
+void get_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
+		crow::json::rvalue body = crow::json::load(req.body);
+		std::string user_id = body["id"].s();
+		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
+		if (!user) {
+			handle_error(res, "user not found", 404);
+			return;
+		}
+		crow::json::wvalue user_data;
+		user_data["id"] = user.get()->get_id();
+		user_data["community_id"] = user.get()->get_community_id();
+		user_data["username"] = user.get()->get_username();
+		user_data["email"] = user.get()->get_email();
+		user_data["type"] = user.get()->get_type();
+		user_data["balance"] = user.get()->get_balance();
+		user_data["created_at"] = user.get()->get_created_at();
+		user_data["updated_at"] = user.get()->get_updated_at();
+
+		crow::json::wvalue data{{"user", user_data}};
+		res.code = 200;
+		res.write(data.dump());
+		res.end();
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error in get self: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
 	}
 }
