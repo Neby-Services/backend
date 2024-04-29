@@ -1,7 +1,6 @@
 #include <controllers/auth_controller.h>
 #include <utils/auth.h>
 #include <utils/user_validations.h>
-
 #include <bcrypt/BCrypt.hpp>
 #include <ctime>  // Include the ctime header for time functions
 #include <iomanip>
@@ -143,15 +142,18 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 		handle_error(res, "INTERNAL SERVER ERROR", 500);
 	}
 }
-void get_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+
+void AuthController::get_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 		std::string user_id = body["id"].s();
 		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
+
 		if (!user) {
 			handle_error(res, "user not found", 404);
 			return;
 		}
+
 		crow::json::wvalue user_data;
 		user_data["id"] = user.get()->get_id();
 		user_data["community_id"] = user.get()->get_community_id();
