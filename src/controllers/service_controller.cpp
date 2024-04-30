@@ -167,3 +167,65 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 		handle_error(res, "Error deleting service", 500);
 	}
 }
+
+void ServiceController::update_service(pqxx::connection &db, const crow::request &req, crow::response &res, std::string service_id) {
+	try {
+		crow::json::rvalue request = crow::json::load(req.body);
+
+		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id, false);
+
+		if (service == nullptr) {
+			handle_error(res, "service not found", 404);
+			return;
+		}
+
+		std::string service_creator_id = service.get()->get_creator_id();
+
+		std::unique_ptr<UserModel> creator = UserModel::get_user_by_id(db, service_creator_id);
+		std::string service_community = creator.get()->get_community_id();
+
+		std::unique_ptr<UserModel> admin = UserModel::get_user_by_id(db, request["id"].s());
+		std::string admin_community = admin.get()->get_community_id();
+
+		if ((service_community == admin_community && request["isAdmin"].b() == true) || service_creator_id == request["id"].s()) {
+			// comprobacions
+			crow::json::rvalue update = crow::json::load(req.body);
+			std::string temp_tittle = "", temp_description = "";
+			int temp_price = -1;
+
+			if (update.has("tittle")) {
+				temp_tittle = update["tittle"].s();
+			}
+
+			if (update.has("description")) {
+				temp_description = update["description"].s();
+			}
+
+			if (update.has("price")) {
+				temp_price = update["price"].i();
+				if (temp_price < 0) {
+					handle_error(res, "invalid price", 400);
+					return;
+				}
+			}
+
+			bool updated_service = ServiceModel::update_service_by_id(db, service_id, temp_tittle, temp_description, temp_price);
+			if (updated_service) {
+				crow::json::wvalue message({{"message", "service deleted succesfully"}});
+				res.write(message.dump());
+				res.code = 200;
+				res.end();
+			} else {
+				handle_error(res, "could not delete service", 400);
+				return;
+			}
+		} else {
+			handle_error(res, "user without admin privileges or not creator of service", 403);
+			return;
+		}
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error deleting service: " << e.what() << std::endl;
+		handle_error(res, "Error deleting service", 500);
+	}
+}
