@@ -1,14 +1,20 @@
 # Integration Testing for C++ Server
 
 ## Table of Contents
-1. [Project Description](#project-description)
-2. [Tools Used](#tools-used)
-3. [Project Objective](#project-objective)
-4. [Project Structure](#project-structure)
-5. [Running the Tests](#running-the-tests)
-    - [Method 1: Automated Execution with Docker](#method-1-automated-execution-with-docker)
-    - [Method 2: Manual Execution within the Container](#method-2-manual-execution-within-the-container)
-6. [Tests Organization](#tests-organization)
+- [Integration Testing for C++ Server](#integration-testing-for-c-server)
+	- [Table of Contents](#table-of-contents)
+	- [Project Description](#project-description)
+	- [Tools Used](#tools-used)
+	- [Project Objective](#project-objective)
+	- [Project Structure](#project-structure)
+	- [Running the Tests](#running-the-tests)
+		- [Method 1: Automated Execution with Docker](#method-1-automated-execution-with-docker)
+		- [Method 2: Manual Execution within the Container](#method-2-manual-execution-within-the-container)
+	- [Tests Organization](#tests-organization)
+		- [Auth](#auth)
+		- [Users](#users)
+		- [Services](#services)
+		- [Notifications](#notifications)
 
 ## Project Description
 

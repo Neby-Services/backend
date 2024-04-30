@@ -75,19 +75,8 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 
 			service["id"] = all_services[i].get()->get_id();
 			service["creator_id"] = all_services[i].get()->get_creator_id();
-			if (all_services[i].get()->get_buyer_id().has_value()) {
-				crow::json::wvalue buyer;
-				buyer["id"] = all_services[i].get()->get_buyer().get_id();
-				buyer["username"] = all_services[i].get()->get_buyer().get_username();
-				buyer["type"] = all_services[i].get()->get_buyer().get_type();
-				buyer["email"] = all_services[i].get()->get_buyer().get_email();
-				buyer["balance"] = all_services[i].get()->get_buyer().get_balance();
-				buyer["created_at"] = all_services[i].get()->get_buyer().get_created_at();
-				buyer["updated_at"] = all_services[i].get()->get_buyer().get_updated_at();
-
-				service["buyer"] = crow::json::wvalue(buyer);
+			if (all_services[i].get()->get_buyer_id().has_value())
 				service["buyer_id"] = all_services[i].get()->get_buyer_id().value();
-			}
 			service["title"] = all_services[i].get()->get_title();
 			service["description"] = all_services[i].get()->get_description();
 			service["price"] = all_services[i].get()->get_price();
@@ -98,16 +87,31 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			service["created_at"] = all_services[i].get()->get_created_at();
 			service["updated_at"] = all_services[i].get()->get_updated_at();
 
-			crow::json::wvalue creator;
-			creator["id"] = all_services[i].get()->get_creator().get_id();
-			creator["username"] = all_services[i].get()->get_creator().get_username();
-			creator["type"] = all_services[i].get()->get_creator().get_type();
-			creator["email"] = all_services[i].get()->get_creator().get_email();
-			creator["balance"] = all_services[i].get()->get_creator().get_balance();
-			creator["created_at"] = all_services[i].get()->get_creator().get_created_at();
-			creator["updated_at"] = all_services[i].get()->get_creator().get_updated_at();
+			if (all_services[i].get()->get_creator().has_value()) {
+				crow::json::wvalue creator;
+				creator["id"] = all_services[i].get()->get_creator().value().get_id();
+				creator["username"] = all_services[i].get()->get_creator().value().get_username();
+				creator["type"] = all_services[i].get()->get_creator().value().get_type();
+				creator["email"] = all_services[i].get()->get_creator().value().get_email();
+				creator["balance"] = all_services[i].get()->get_creator().value().get_balance();
+				creator["created_at"] = all_services[i].get()->get_creator().value().get_created_at();
+				creator["updated_at"] = all_services[i].get()->get_creator().value().get_updated_at();
 
-			service["creator"] = crow::json::wvalue(creator);
+				service["creator"] = crow::json::wvalue(creator);
+			}
+
+			if (all_services[i].get()->get_buyer().has_value()) {
+				crow::json::wvalue buyer;
+				buyer["id"] = all_services[i].get()->get_buyer().value().get_id();
+				buyer["username"] = all_services[i].get()->get_buyer().value().get_username();
+				buyer["type"] = all_services[i].get()->get_buyer().value().get_type();
+				buyer["email"] = all_services[i].get()->get_buyer().value().get_email();
+				buyer["balance"] = all_services[i].get()->get_buyer().value().get_balance();
+				buyer["created_at"] = all_services[i].get()->get_buyer().value().get_created_at();
+				buyer["updated_at"] = all_services[i].get()->get_buyer().value().get_updated_at();
+
+				service["buyer"] = crow::json::wvalue(buyer);
+			}
 
 			services.push_back(service);
 		}
@@ -120,5 +124,46 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 	} catch (const std::exception &e) {
 		std::cerr << "Error getting services: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
+	}
+}
+
+void ServiceController::delete_service(pqxx::connection &db, const crow::request &req, crow::response &res, std::string service_id) {
+	try {
+		crow::json::rvalue request = crow::json::load(req.body);
+
+		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id, false);
+
+		if (service == nullptr) {
+			handle_error(res, "service not found", 404);
+			return;
+		}
+
+		std::string service_creator_id = service.get()->get_creator_id();
+
+		std::unique_ptr<UserModel> creator = UserModel::get_user_by_id(db, service_creator_id);
+		std::string service_community = creator.get()->get_community_id();
+
+		std::unique_ptr<UserModel> admin = UserModel::get_user_by_id(db, request["id"].s());
+		std::string admin_community = admin.get()->get_community_id();
+
+		if ((service_community == admin_community && request["isAdmin"].b() == true) || service_creator_id == request["id"].s()) {
+			std::unique_ptr<ServiceModel> deleted_service = ServiceModel::delete_service_by_id(db, service_id);
+			if (deleted_service) {
+				crow::json::wvalue message({{"message", "service deleted succesfully"}});
+				res.write(message.dump());
+				res.code = 200;
+				res.end();
+			} else {
+				handle_error(res, "could not delete service", 400);
+				return;
+			}
+		} else {
+			handle_error(res, "user without admin privileges or not creator of service", 403);
+			return;
+		}
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error deleting service: " << e.what() << std::endl;
+		handle_error(res, "Error deleting service", 500);
 	}
 }

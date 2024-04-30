@@ -1,12 +1,10 @@
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
-
 #include <cstdlib>	/
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
-
 #include "../common.h"
 
 class GetServicesTest : public testing::Test {
@@ -28,11 +26,10 @@ class GetServicesTest : public testing::Test {
 		{"community_name", "example_community_name"}};
 
 	void SetUp() override {
-		// create user1 
+		// create user1
 		// create user 2
 		// create services for user1
 		// create services for user2
-		
 	}
 
 	void TearDown() override {

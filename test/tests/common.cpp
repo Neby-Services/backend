@@ -1,5 +1,4 @@
 #include "common.h"
-
 #include <cstdlib>	// Para std::getenv
 #include <format>
 #include <iostream>
@@ -78,7 +77,7 @@ std::string create_user_test() {
 		std::cerr << "Error connecting to the database." << std::endl;
 	}
 
-	return "";	
+	return "";
 }
 
 void create_services() {
@@ -93,8 +92,8 @@ void create_services() {
 			for (int i = 1; i <= 5; ++i) {
 				std::string title = "Service " + std::to_string(i);
 				std::string description = "Description of service " + std::to_string(i);
-				int price = 100 * i;			 
-				std::string type = "REQUESTED";	 
+				int price = 100 * i;
+				std::string type = "REQUESTED";
 
 				txn.exec_params("INSERT INTO services (creator_id, title, description, price, type) VALUES ($1, $2, $3, $4, $5)",
 								user_id, title, description, price, type);
@@ -133,6 +132,6 @@ std::string register_and_get_user_token() {
 
 		return token_value;
 	} else {
-		return "";	
+		return "";
 	}
 }

@@ -28,4 +28,3 @@ This document outlines the testing scenarios for the `create_service` endpoint i
     - **Expected Output:**
         - HTTP status code: 500.
         - Error message indicating an internal server error.
-
