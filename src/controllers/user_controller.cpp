@@ -88,34 +88,63 @@ void UserController::delete_user_by_id(pqxx::connection &db, crow::response &res
 
 void UserController::update_user_by_id(pqxx::connection &db, const crow::request &req, crow::response &res, const std::string &user_id) {
 	try {
-		bool userFound = UserModel::exists_id(db, user_id);
-		if (userFound) {
-			crow::json::rvalue update = crow::json::load(req.body);
-			std::string temp_name = "", temp_pass = "", temp_email = "";
-			if (update.has("username")) {
-				temp_name = update["username"].s();
-				if (!validate_username(temp_name, res)) return;
+		crow::json::rvalue update = crow::json::load(req.body);
+		if (update["isAdmin"].b() == true) {
+			if (user_id.empty()) {
+				handle_error(res, "id must be provided", 400);
+				return;
 			}
-			if (update.has("email")) {
-				temp_email = update["email"].s();
-				if (!validate_email(temp_email, res)) return;
+
+			if (!isValidUUID(user_id)) {
+				handle_error(res, "invalid id", 400);
+				return;
 			}
-			if (update.has("password")) {
-				temp_pass = update["password"].s();
-				if (!validate_password(temp_pass, res)) return;
+
+			std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
+
+			if (!user) {
+				handle_error(res, "user not found", 404);
+				return;
 			}
-			std::string hash = BCrypt::generateHash(temp_pass);
-			bool succes = UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash);
-			if (succes) {
-				res.code = 200;
-				crow::json::wvalue response_message;
-				response_message["message"] = "User updated successfully";
-				res.write(response_message.dump());
-				res.end();
-			} else
-				handle_error(res, "internal server error", 500);
+
+			std::string user_community = user.get()->get_community_id();
+
+			std::unique_ptr<UserModel> admin = UserModel::get_user_by_id(db, update["id"].s());
+			std::string admin_community = admin.get()->get_community_id();
+
+			if (user_community == admin_community) {
+				crow::json::rvalue update = crow::json::load(req.body);
+				std::string temp_name = "";
+				int temp_balance = -1;
+				if (update.has("username")) {
+					temp_name = update["username"].s();
+					// validate username currently throws an error, so this return and error messages ar not being used
+					if (!validate_username(temp_name, res)) {
+						handle_error(res, "incorrect username", 400);
+						return;
+					};
+				}
+				if (update.has("balance")) {
+					temp_balance = update["balance"].i();
+					if (temp_balance < 0) {
+						handle_error(res, "invalid balance", 400);
+						return;
+					}
+				}
+				bool succes = UserModel::update_user_admin(db, user_id, temp_name, temp_balance);
+				if (succes) {
+					res.code = 200;
+					crow::json::wvalue response_message;
+					response_message["message"] = "User updated successfully";
+					res.write(response_message.dump());
+					res.end();
+				} else
+					handle_error(res, "internal server error", 500);
+			} else {
+				handle_error(res, "not enough privileges", 403);
+			}
 		} else
-			handle_error(res, "user not found", 404);
+			handle_error(res, "not enough privileges", 403);
 	} catch (const std::exception &e) {
 		std::cerr << "Error updating user: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);

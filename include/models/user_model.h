@@ -48,4 +48,5 @@ class UserModel {
 
 	static bool delete_user_by_id(pqxx::connection& db, const std::string& id);
 	static bool update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username = "", const std::string email = "", const std::string password = "");
+	static bool update_user_admin(pqxx::connection& db, const std::string& id, const std::string username, const int balance);
 };

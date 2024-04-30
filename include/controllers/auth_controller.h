@@ -5,7 +5,6 @@
 #include <models/user_model.h>
 #include <utils/common.h>
 #include <utils/utils.h>
-
 #include <format>
 #include <memory>
 #include <pqxx/pqxx>

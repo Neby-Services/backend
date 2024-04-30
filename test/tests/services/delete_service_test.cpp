@@ -30,12 +30,6 @@ TEST if user is authenticated but not is admin and not creator
 status_code = 401
 res.body = 'not enough priviligies';
 
-	// 1. crear un usuario admin
-	// 1.1 admin creado, crea un servicio y guardamos el id
-	// 2. obtener el codigo de la comunidad
-	// 3. crear un usuario neighbor
-	// 4. token neighbor
-	// 5. haces la peticion de eliminar el primer sericio
 */
 class DeleteServiceNeitherAuth : public testing::Test {
 	protected:
