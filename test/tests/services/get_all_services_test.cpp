@@ -1,12 +1,10 @@
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
-
 #include <cstdlib>
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
-
 #include "../common.h"
 
 class GetServicesTest : public testing::Test {

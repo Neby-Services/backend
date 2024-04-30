@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utils/errors.h>
-
 #include <format>
 #include <iostream>
 #include <memory>
