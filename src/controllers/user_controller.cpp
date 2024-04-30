@@ -95,6 +95,11 @@ void UserController::update_user_by_id(pqxx::connection &db, const crow::request
 				return;
 			}
 
+			if (!isValidUUID(user_id)) {
+				handle_error(res, "invalid id", 400);
+				return;
+			}
+
 			std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
 
 			if (!user) {
@@ -109,21 +114,24 @@ void UserController::update_user_by_id(pqxx::connection &db, const crow::request
 
 			if (user_community == admin_community) {
 				crow::json::rvalue update = crow::json::load(req.body);
-				std::string temp_name = "", temp_pass = "", temp_email = "";
+				std::string temp_name = "";
+				int temp_balance = -1;
 				if (update.has("username")) {
 					temp_name = update["username"].s();
-					if (!validate_username(temp_name, res)) return;
+					// validate username currently throws an error, so this return and error messages ar not being used
+					if (!validate_username(temp_name, res)) {
+						handle_error(res, "incorrect username", 400);
+						return;
+					};
 				}
-				if (update.has("email")) {
-					temp_email = update["email"].s();
-					if (!validate_email(temp_email, res)) return;
+				if (update.has("balance")) {
+					temp_balance = update["balance"].i();
+					if (temp_balance < 0) {
+						handle_error(res, "invalid balance", 400);
+						return;
+					}
 				}
-				if (update.has("password")) {
-					temp_pass = update["password"].s();
-					if (!validate_password(temp_pass, res)) return;
-				}
-				std::string hash = BCrypt::generateHash(temp_pass);
-				bool succes = UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash);
+				bool succes = UserModel::update_user_admin(db, user_id, temp_name, temp_balance);
 				if (succes) {
 					res.code = 200;
 					crow::json::wvalue response_message;
@@ -132,6 +140,8 @@ void UserController::update_user_by_id(pqxx::connection &db, const crow::request
 					res.end();
 				} else
 					handle_error(res, "internal server error", 500);
+			} else {
+				handle_error(res, "not enough privileges", 403);
 			}
 		} else
 			handle_error(res, "not enough privileges", 403);

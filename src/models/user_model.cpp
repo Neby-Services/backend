@@ -160,3 +160,16 @@ bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, c
 		return false;
 	}
 }
+
+bool UserModel::update_user_admin(pqxx::connection& db, const std::string& id, const std::string username, const int balance) {
+	try {
+		pqxx::work txn(db);
+		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
+		if (!(balance < 0)) pqxx::result result = txn.exec_params("UPDATE users SET balance = $1 WHERE id = $2", balance, id);
+		txn.commit();
+		return true;
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to update user: " << e.what() << std::endl;
+		return false;
+	}
+}
