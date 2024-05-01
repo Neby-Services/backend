@@ -27,4 +27,5 @@ class ServiceController {
 	static void get_services(pqxx::connection& db, const crow::request& req, crow::response& res);
 	static void get_service_by_id(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id);
 	static void delete_service(pqxx::connection& db, const crow::request& req, crow::response& res, std::string service_id);
+	static void update_service(pqxx::connection& db, const crow::request& req, crow::response& res, std::string service_id);
 };
