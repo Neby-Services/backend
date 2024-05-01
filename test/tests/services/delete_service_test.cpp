@@ -27,7 +27,7 @@ TEST(DeleteServiceAuth, delete_service_not_auth) {
 /*
 
 TEST if user is authenticated but not is admin and not creator
-status_code = 401
+status_code = 403
 res.body = 'not enough priviligies';
 
 */
