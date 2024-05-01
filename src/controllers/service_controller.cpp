@@ -50,6 +50,76 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 	}
 }
 
+void ServiceController::get_service_by_id(pqxx::connection &db, const crow::request &req, crow::response &res, const std::string &service_id) {
+	try {
+		if (service_id.empty()) {
+			handle_error(res, "id must be provided", 400);
+			return;
+		}
+		// Consulta el servicio por su ID
+		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id);
+
+		// Verifica si se encontró el servicio
+		if (!service) {
+			handle_error(res, "service not found", 404);
+			return;
+		}
+
+		// Construye el objeto JSON del servicio
+		crow::json::wvalue service_json;
+
+		service_json["id"] = service.get()->get_id();
+		service_json["creator_id"] = service.get()->get_creator_id();
+		if (service.get()->get_buyer_id().has_value())
+			service_json["buyer_id"] = service.get()->get_buyer_id().value();
+		service_json["title"] = service.get()->get_title();
+		service_json["description"] = service.get()->get_description();
+		service_json["price"] = service.get()->get_price();
+		service_json["status"] = service.get()->get_status();
+		service_json["type"] = service.get()->get_type();
+		if (service.get()->get_image_url().has_value())
+			service_json["image_url"] = service.get()->get_image_url().value();
+		service_json["created_at"] = service.get()->get_created_at();
+		service_json["updated_at"] = service.get()->get_updated_at();
+
+		if (service.get()->get_creator().has_value()) {
+			crow::json::wvalue creator;
+			creator["id"] = service.get()->get_creator().value().get_id();
+			creator["username"] = service.get()->get_creator().value().get_username();
+			creator["type"] = service.get()->get_creator().value().get_type();
+			creator["email"] = service.get()->get_creator().value().get_email();
+			creator["balance"] = service.get()->get_creator().value().get_balance();
+			creator["created_at"] = service.get()->get_creator().value().get_created_at();
+			creator["updated_at"] = service.get()->get_creator().value().get_updated_at();
+
+			service_json["creator"] = crow::json::wvalue(creator);
+		}
+
+		if (service.get()->get_buyer().has_value()) {
+			crow::json::wvalue buyer;
+			buyer["id"] = service.get()->get_buyer().value().get_id();
+			buyer["username"] = service.get()->get_buyer().value().get_username();
+			buyer["type"] = service.get()->get_buyer().value().get_type();
+			buyer["email"] = service.get()->get_buyer().value().get_email();
+			buyer["balance"] = service.get()->get_buyer().value().get_balance();
+			buyer["created_at"] = service.get()->get_buyer().value().get_created_at();
+			buyer["updated_at"] = service.get()->get_buyer().value().get_updated_at();
+
+			service_json["buyer"] = crow::json::wvalue(buyer);
+		}
+
+		crow::json::wvalue data{{"service", service_json}};
+
+		res.write(data.dump());
+		res.code = 200;
+		res.end();
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error getting service: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
+	}
+}
+
 void ServiceController::get_services(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
@@ -75,19 +145,8 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 
 			service["id"] = all_services[i].get()->get_id();
 			service["creator_id"] = all_services[i].get()->get_creator_id();
-			if (all_services[i].get()->get_buyer_id().has_value()) {
-				crow::json::wvalue buyer;
-				buyer["id"] = all_services[i].get()->get_buyer().get_id();
-				buyer["username"] = all_services[i].get()->get_buyer().get_username();
-				buyer["type"] = all_services[i].get()->get_buyer().get_type();
-				buyer["email"] = all_services[i].get()->get_buyer().get_email();
-				buyer["balance"] = all_services[i].get()->get_buyer().get_balance();
-				buyer["created_at"] = all_services[i].get()->get_buyer().get_created_at();
-				buyer["updated_at"] = all_services[i].get()->get_buyer().get_updated_at();
-
-				service["buyer"] = crow::json::wvalue(buyer);
+			if (all_services[i].get()->get_buyer_id().has_value())
 				service["buyer_id"] = all_services[i].get()->get_buyer_id().value();
-			}
 			service["title"] = all_services[i].get()->get_title();
 			service["description"] = all_services[i].get()->get_description();
 			service["price"] = all_services[i].get()->get_price();
@@ -98,16 +157,31 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			service["created_at"] = all_services[i].get()->get_created_at();
 			service["updated_at"] = all_services[i].get()->get_updated_at();
 
-			crow::json::wvalue creator;
-			creator["id"] = all_services[i].get()->get_creator().get_id();
-			creator["username"] = all_services[i].get()->get_creator().get_username();
-			creator["type"] = all_services[i].get()->get_creator().get_type();
-			creator["email"] = all_services[i].get()->get_creator().get_email();
-			creator["balance"] = all_services[i].get()->get_creator().get_balance();
-			creator["created_at"] = all_services[i].get()->get_creator().get_created_at();
-			creator["updated_at"] = all_services[i].get()->get_creator().get_updated_at();
+			if (all_services[i].get()->get_creator().has_value()) {
+				crow::json::wvalue creator;
+				creator["id"] = all_services[i].get()->get_creator().value().get_id();
+				creator["username"] = all_services[i].get()->get_creator().value().get_username();
+				creator["type"] = all_services[i].get()->get_creator().value().get_type();
+				creator["email"] = all_services[i].get()->get_creator().value().get_email();
+				creator["balance"] = all_services[i].get()->get_creator().value().get_balance();
+				creator["created_at"] = all_services[i].get()->get_creator().value().get_created_at();
+				creator["updated_at"] = all_services[i].get()->get_creator().value().get_updated_at();
 
-			service["creator"] = crow::json::wvalue(creator);
+				service["creator"] = crow::json::wvalue(creator);
+			}
+
+			if (all_services[i].get()->get_buyer().has_value()) {
+				crow::json::wvalue buyer;
+				buyer["id"] = all_services[i].get()->get_buyer().value().get_id();
+				buyer["username"] = all_services[i].get()->get_buyer().value().get_username();
+				buyer["type"] = all_services[i].get()->get_buyer().value().get_type();
+				buyer["email"] = all_services[i].get()->get_buyer().value().get_email();
+				buyer["balance"] = all_services[i].get()->get_buyer().value().get_balance();
+				buyer["created_at"] = all_services[i].get()->get_buyer().value().get_created_at();
+				buyer["updated_at"] = all_services[i].get()->get_buyer().value().get_updated_at();
+
+				service["buyer"] = crow::json::wvalue(buyer);
+			}
 
 			services.push_back(service);
 		}
