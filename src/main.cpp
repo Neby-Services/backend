@@ -1,5 +1,6 @@
 #include <crow.h>
 #include <routes/auth_routes.h>
+#include <routes/notification_routes.h>
 #include <routes/service_routes.h>
 #include <routes/user_routes.h>
 #include <utils/common.h>
@@ -21,6 +22,7 @@ int main() {
 		NebyApp app;
 		std::string connection_string = std::format("dbname={} user={} password={} host={} port={}", DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT);
 		pqxx::connection conn(connection_string);
+		
 
 		if (conn.is_open()) {
 			std::cout << "Opened database successfully: " << conn.dbname() << std::endl;
@@ -32,6 +34,7 @@ int main() {
 		initialize_auth_routes(app, conn);
 		initialize_user_routes(app, conn);
 		initialize_service_routes(app, conn);
+		initialize_notifications_routes(app, conn);
 
 		app.port(HTTP_PORT).multithreaded().run();
 		conn.disconnect();
