@@ -56,11 +56,16 @@ void ServiceController::get_service_by_id(pqxx::connection &db, const crow::requ
 			handle_error(res, "id must be provided", 400);
 			return;
 		}
+
+		if (!isValidUUID(service_id)) {
+			handle_error(res, "id is invalid", 400);
+			return;
+		}
 		// Consulta el servicio por su ID
 		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id);
 
 		// Verifica si se encontró el servicio
-		if (!service) {
+		if (service == nullptr) {
 			handle_error(res, "service not found", 404);
 			return;
 		}
