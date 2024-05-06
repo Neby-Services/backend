@@ -1,5 +1,6 @@
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
+#include <unistd.h>
 #include <cstdlib>
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
@@ -72,15 +73,15 @@ class GetServiceTest : public testing::Test {
 // ? testear un 200 y services no es vacio, tiene servicios, comprobar que tiene las propiedades:
 
 TEST_F(GetServiceTest, correct_id) {
-	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + "be2bb69d-f5f9-432b-b605-d8e939bf6ee2";
+	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 
 	auto response = cpr::Get(cpr::Url{url}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
-	std::cout << _service_id_ << std::endl;
+	std::cout << _service_id_ << "    " << _admin_token_ << std::endl;
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service got succesfully: ";
-	EXPECT_TRUE(json.contains("message"));
-	EXPECT_EQ(json["message"], "service got succesfully");
+	ASSERT_TRUE(json.contains("service"));
+	ASSERT_TRUE(json["service"].is_object()) << "Expected the 'service' key to contain an object.";
 }
 
 TEST_F(GetServiceTest, invalid_id) {
@@ -93,7 +94,7 @@ TEST_F(GetServiceTest, invalid_id) {
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_TRUE(json.contains("error"));
-	EXPECT_EQ(json["error"], "invalid id service");
+	EXPECT_EQ(json["error"], "id is invalid");
 }
 
 TEST_F(GetServiceTest, not_found_id) {
