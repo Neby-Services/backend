@@ -76,7 +76,6 @@ TEST_F(GetServiceTest, correct_id) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 
 	auto response = cpr::Get(cpr::Url{url}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
-	std::cout << _service_id_ << "    " << _admin_token_ << std::endl;
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service got succesfully: ";
