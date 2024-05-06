@@ -1,10 +1,4 @@
 #include <controllers/auth_controller.h>
-#include <utils/auth.h>
-#include <utils/user_validations.h>
-#include <bcrypt/BCrypt.hpp>
-#include <ctime>  // Include the ctime header for time functions
-#include <iomanip>
-#include <string>
 
 void AuthController::register_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
@@ -53,7 +47,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			return;
 		}
 
-		std::string jwtToken = create_token(user.get()->get_id(), type);
+		std::string jwtToken = create_token(user);
 		int expirationTimeSeconds = 3600;
 		time_t now = time(0);
 		time_t expirationTime = now + expirationTimeSeconds;
@@ -104,7 +98,7 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 		std::string password = body["password"].s();
 
 		if (BCrypt::validatePassword(password, encrypt_password)) {
-			std::string jwtToken = create_token(user.get()->get_id(), user.get()->get_type());
+			std::string jwtToken = create_token(user);
 
 			int expirationTimeSeconds = 3600;
 			time_t now = time(0);
