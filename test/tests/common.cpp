@@ -51,6 +51,25 @@ void clean_community_table() {
 	}
 }
 
+void clean_service_table() {
+	try {
+		pqxx::connection conn(connection_string);
+
+		if (conn.is_open()) {
+			pqxx::work txn(conn);
+
+			txn.exec("DELETE FROM services");
+
+			txn.commit();
+
+		} else {
+			std::cout << "Error al conectar a la base de datos." << std::endl;
+		}
+	} catch (const std::exception& e) {
+		std::cout << "Error de excepción: " << e.what() << std::endl;
+	}
+}
+
 std::string create_user_test() {
 	pqxx::connection conn(connection_string);
 

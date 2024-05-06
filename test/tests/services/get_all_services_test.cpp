@@ -48,7 +48,7 @@ class GetServicesTest : public testing::Test {
 // * crear usuario y obtener su token, existen servicios de ese usuario y solo existe una comunidas
 // ? testear un 200 y services no es vacio, tiene servicios, comprobar que tiene las propiedades:
 
-TEST(GetServicesTest, first) {
+TEST(GetServicesTest, get_all_services) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
 
 	auto response = cpr::Get(cpr::Url{url}, cpr::Cookies{{"token", register_and_get_user_token()}});
