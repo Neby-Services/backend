@@ -415,7 +415,7 @@ class DeleteServiceNotFoundAuth : public testing::Test {
 };
 
 TEST_F(DeleteServiceNotFoundAuth, delete_service_not_found) {
-	std::string lol = "123e4567-e89b-12d3-a456-426655440000";
+	std::string lol = "123e4567-e89b-12d3-a456-426655400123";
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + lol;
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);

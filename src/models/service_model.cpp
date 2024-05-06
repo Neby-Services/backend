@@ -56,6 +56,7 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 		result[0]["created_at"].as<std::string>(),
 		result[0]["updated_at"].as<std::string>());
 }
+
 std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::connection& db, const std::string& community_id, const std::string& status) {
 	std::vector<std::unique_ptr<ServiceModel>> all_services;
 

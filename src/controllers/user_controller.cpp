@@ -68,18 +68,45 @@ void UserController::get_user_by_id(pqxx::connection &db, const crow::request &r
 	}
 }
 
-void UserController::delete_user_by_id(pqxx::connection &db, crow::response &res, const std::string &user_id) {
+void UserController::delete_user_by_id(pqxx::connection &db, const crow::request &req, crow::response &res, const std::string &user_id) {
 	try {
-		bool deleted = UserModel::delete_user_by_id(db, user_id);
+		crow::json::rvalue request = crow::json::load(req.body);
+		if (request["isAdmin"].b() == false) {
+			handle_error(res, "not enough privileges", 403);
+			return;
+		}
 
-		if (deleted) {
-			res.code = 200;
-			crow::json::wvalue response_message;
-			response_message["message"] = "user deleted successfully";
-			res.write(response_message.dump());
-			res.end();
-		} else
+		else if (!isValidUUID(user_id)) {
+			handle_error(res, "invalid id", 400);
+			return;
+		}
+
+		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
+		if (!user) {
 			handle_error(res, "user not found", 404);
+			return;
+		}
+
+		std::string user_community = user.get()->get_community_id();
+
+		std::unique_ptr<UserModel> admin = UserModel::get_user_by_id(db, request["id"].s());
+		std::string admin_community = admin.get()->get_community_id();
+
+		if (user_community == admin_community) {
+			bool deleted = UserModel::delete_user_by_id(db, user_id);
+			if (deleted) {
+				res.code = 200;
+				crow::json::wvalue response_message;
+				response_message["message"] = "user deleted successfully";
+				res.write(response_message.dump());
+				res.end();
+			} else
+				handle_error(res, "user not found", 404);
+		}
+
+		else {
+			handle_error(res, "not enough privileges", 403);
+		}
 	} catch (const std::exception &e) {
 		std::cerr << "Error deleting user: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
@@ -180,6 +207,32 @@ void UserController::update_self(pqxx::connection &db, const crow::request &req,
 			handle_error(res, "internal server error", 500);
 	} catch (const std::exception &e) {
 		std::cerr << "Error updating user: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
+	}
+}
+
+void UserController::delete_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
+		crow::json::rvalue request = crow::json::load(req.body);
+		std::string user_id = request["id"].s();
+
+		if (request["isAdmin"].b() == true) {
+			handle_error(res, "admin can't delete themselves", 403);
+		}
+
+		bool deleted = UserModel::delete_user_by_id(db, user_id);
+
+		if (deleted) {
+			res.code = 200;
+			crow::json::wvalue response_message;
+			response_message["message"] = "user deleted successfully";
+			res.write(response_message.dump());
+			res.end();
+		} else
+			handle_error(res, "user not found", 404);
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error deleting user: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
 	}
 }
