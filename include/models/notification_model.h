@@ -1,6 +1,8 @@
 #pragma once
 
 #include <utils/common.h>
+#include <utils/errors.h>
+#include <memory>
 
 class NotificationModel {
 	private:
@@ -12,10 +14,17 @@ class NotificationModel {
 	std::string _updated_at;
 
 	public:
-	NotificationModel(std::string id, std::string sender_id, std::string service_id, std::string status);
+	NotificationModel(std::string id, std::string sender_id, std::string service_id, std::string status, std::string created_at, std::string updated_at);
 
 	std::string get_id() const;
 	std::string get_sender_id() const;
 	std::string get_service_id() const;
 	std::string get_status() const;
+	std::string get_created_at() const;
+	std::string get_updated_at() const;
+
+	static std::unique_ptr<NotificationModel> create_notification(pqxx::connection& db, const std::string& sender_id, const std::string& service_id, const std::string& status = NotificationStatus::PENDING, bool throw_when_null = false);
+
+	// * if the requester has already requested the service before, it returns true, otherwise false
+	static bool is_requested(pqxx::connection& db, const std::string& sender_id);
 };
