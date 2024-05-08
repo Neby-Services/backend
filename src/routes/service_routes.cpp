@@ -3,16 +3,15 @@
 void initialize_service_routes(NebyApp& app, pqxx::connection& db) {
 	// ** GET /api/services
 
+	CROW_ROUTE(app, "/api/services/self").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&db](const crow::request& req, crow::response& res) {
+		ServiceController::get_services_self(db, req, res);
+	});
 	CROW_ROUTE(app, "/api/services/<string>").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&db](const crow::request& req, crow::response& res, const std::string& service_id) {
 		ServiceController::get_service_by_id(db, req, res, service_id);
 	});
 
 	CROW_ROUTE(app, "/api/services").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&db](const crow::request& req, crow::response& res) {
 		ServiceController::get_services(db, req, res);
-	});
-
-	CROW_ROUTE(app, "/api/services/self").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&db](const crow::request& req, crow::response& res) {
-		ServiceController::get_services_self(db, req, res);
 	});
 
 	// ** GET /api/services/:id

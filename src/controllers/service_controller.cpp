@@ -133,7 +133,6 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		std::vector<std::unique_ptr<ServiceModel>> all_services;
 
 		auto status = req.url_params.get("status");
-
 		if (!status) {
 			all_services = ServiceModel::get_services(db, user.get()->get_community_id());
 
