@@ -216,6 +216,115 @@ std::unique_ptr<ServiceModel> ServiceModel::get_service_by_id(pqxx::connection& 
 	return get_service(db, "id", id, throw_when_null);
 }
 
+std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx::connection& db, const std::string& creator_id, const std::string& status) {
+	std::vector<std::unique_ptr<ServiceModel>> all_services;
+
+	pqxx::work txn(db);
+
+	std::string query =
+		"SELECT s.id AS service_id, "
+		"s.creator_id, "
+		"s.buyer_id, "
+		"s.title, "
+		"s.description, "
+		"s.price, "
+		"s.status, "
+		"s.type, "
+		"s.image_url, "
+		"s.created_at, "
+		"s.updated_at, "
+		"uc.id AS creator_id, "
+		"uc.community_id AS creator_community_id, "
+		"uc.username AS creator_username, "
+		"uc.email AS creator_email, "
+		"uc.type AS creator_type, "
+		"uc.balance AS creator_balance, "
+		"uc.created_at AS creator_created_at, "
+		"uc.updated_at AS creator_updated_at, "
+		"ub.id AS buyer_id, "
+		"ub.community_id AS buyer_community_id, "
+		"ub.username AS buyer_username, "
+		"ub.email AS buyer_email, "
+		"ub.type AS buyer_type, "
+		"ub.balance AS buyer_balance, "
+		"ub.created_at AS buyer_created_at, "
+		"ub.updated_at AS buyer_updated_at "
+		"FROM services AS s "
+		"JOIN users AS uc ON s.creator_id = uc.id "
+		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
+		"WHERE s.creator_id = $1";
+
+	// Agregar filtro de status si se proporciona
+	if (!status.empty()) {
+		query += " AND s.status = $2";
+	}
+
+	pqxx::result result;
+	if (!status.empty()) {
+		result = txn.exec_params(query, creator_id, status);
+	} else {
+		result = txn.exec_params(query, creator_id);
+	}
+
+	txn.commit();
+
+	for (const auto& row : result) {
+		std::optional<std::string> buyer_id_field;
+		std::optional<std::string> image_url_field;
+		if (!row["buyer_id"].is_null())
+			buyer_id_field = row["buyer_id"].as<std::string>();
+		else
+			buyer_id_field = std::nullopt;
+		if (!row["image_url"].is_null())
+			image_url_field = row["image_url"].as<std::string>();
+		else
+			image_url_field = std::nullopt;
+
+		// Crear instancia de UserModel para el creador
+		UserModel creator(
+			row["creator_id"].as<std::string>(),
+			row["creator_community_id"].as<std::string>(),
+			row["creator_username"].as<std::string>(),
+			row["creator_email"].as<std::string>(),
+			row["creator_type"].as<std::string>(),
+			row["creator_balance"].as<int>(),
+			row["creator_created_at"].as<std::string>(),
+			row["creator_updated_at"].as<std::string>());
+
+		// Crear instancia de UserModel para el comprador, si existe
+		UserModel buyer;
+		if (buyer_id_field) {
+			buyer = UserModel(
+				row["buyer_id"].as<std::string>(),
+				row["buyer_community_id"].as<std::string>(),
+				row["buyer_username"].as<std::string>(),
+				row["buyer_email"].as<std::string>(),
+				row["buyer_type"].as<std::string>(),
+				row["buyer_balance"].as<int>(),
+				row["buyer_created_at"].as<std::string>(),
+				row["buyer_updated_at"].as<std::string>());
+		}
+
+		// Crear instancia de ServiceModel con UserModel como argumento adicional
+		all_services.push_back(std::make_unique<ServiceModel>(
+			row["service_id"].as<std::string>(),
+			row["creator_id"].as<std::string>(),
+			buyer_id_field,
+			row["title"].as<std::string>(),
+			row["description"].as<std::string>(),
+			row["price"].as<int>(),
+			row["status"].as<std::string>(),
+			row["type"].as<std::string>(),
+			image_url_field,
+			creator,
+			buyer,
+			row["created_at"].as<std::string>(),
+			row["updated_at"].as<std::string>()));
+	}
+
+	return all_services;
+}
+
 std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null) {
 	try {
 		pqxx::work txn(db);

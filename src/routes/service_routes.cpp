@@ -11,6 +11,10 @@ void initialize_service_routes(NebyApp& app, pqxx::connection& db) {
 		ServiceController::get_services(db, req, res);
 	});
 
+	CROW_ROUTE(app, "/api/services/self").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&db](const crow::request& req, crow::response& res) {
+		ServiceController::get_services_self(db, req, res);
+	});
+
 	// ** GET /api/services/:id
 
 	// ** POST /api/services
