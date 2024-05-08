@@ -7,6 +7,9 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 		std::string notifier_id = body["id"].s();
 		int notifier_balance = body["request_balance"].i();
 
+		std::cout << "balancation " << notifier_balance << std::endl;
+		std::cout << "id notfiier " << notifier_id << std::endl;
+
 		//? check if service exist
 		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id);
 		if (!service) {
@@ -65,4 +68,33 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 		std::cerr << "Error in create_notification: " << e.what() << std::endl;
 		handle_error(res, "internal server errror", 500);
 	}
+}
+
+void NotificationController::handle_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& notification_id) {
+	//? extarct query string param -> action = accepeted | refused
+	auto action = req.url_params.get("action");
+
+	//? check if action query param exists
+	if (!action) {
+		handle_error(res, "string query param (action) not provided", 400);
+		return;
+	}
+
+	//? check if action = accepted || refused
+	if (!(std::string(action) == NotificationStatus::ACCEPTED || std::string(action) == NotificationStatus::REFUSED)) {
+		handle_error(res, "action not valid value", 400);
+		return;
+	}
+
+	//? if action == accepted -> accept the notification and refused others
+
+	if (action == NotificationStatus::REFUSED) {
+		std::unique_ptr<NotificationModel> notification_refued = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id);
+	}
+
+	//? if action == refused -> refuse the notification
+	std::cout << action << std::endl;
+	res.code = 200;
+	res.body = "hola";
+	res.end();
 }

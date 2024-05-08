@@ -57,3 +57,31 @@ bool NotificationModel::is_requested(pqxx::connection& db, const std::string& se
 		return false;
 	}
 }
+
+std::unique_ptr<NotificationModel> NotificationModel::handle_notification_status(pqxx::connection& db, const std::string& status, const std::string& notification_id, bool throw_when_null) {
+	try {
+		pqxx::work txn(db);
+
+		pqxx::result result = txn.exec_params("UPDATE notifications SET status = $1 WHERE id = $2 RETURNING *", status, notification_id);
+
+		txn.commit();
+
+		if (result.empty()) {
+			if (throw_when_null)
+				throw data_not_found_exception("service not found");
+			else
+				return nullptr;
+		}
+
+		return std::make_unique<NotificationModel>(
+			result[0]["id"].as<std::string>(),
+			result[0]["sender_id"].as<std::string>(),
+			result[0]["service_id"].as<std::string>(),
+			result[0]["status"].as<std::string>(), result[0]["created_at"].as<std::string>(),
+			result[0]["updated_at"].as<std::string>());
+
+	} catch (const std::exception& e) {
+		std::cerr << e.what() << '\n';
+		return nullptr;
+	}
+}
