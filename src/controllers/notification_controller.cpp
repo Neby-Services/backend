@@ -71,30 +71,53 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 }
 
 void NotificationController::handle_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& notification_id) {
-	//? extarct query string param -> action = accepeted | refused
-	auto action = req.url_params.get("action");
+	try {
+		//? extarct query string param -> action = accepeted | refused
+		auto action = req.url_params.get("action");
 
-	//? check if action query param exists
-	if (!action) {
-		handle_error(res, "string query param (action) not provided", 400);
-		return;
+		//? check if action query param exists
+		if (!action) {
+			handle_error(res, "string query param (action) not provided", 400);
+			return;
+		}
+
+		//? check if action = accepted || refused
+		if (!(std::string(action) == NotificationStatus::ACCEPTED || std::string(action) == NotificationStatus::REFUSED)) {
+			handle_error(res, "action not valid value", 400);
+			return;
+		}
+
+		//? if action == accepted -> accept the notification and refused others
+
+		std::unique_ptr<NotificationModel> notification;
+
+		if (action == NotificationStatus::REFUSED) {
+			notification = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id, true);
+		} else {
+			notification = NotificationModel::handle_notification_status(db, NotificationStatus::ACCEPTED, notification_id, true);
+
+			bool succes_refused = NotificationModel::refused_notifications(db, notification.get()->get_service_id(), notification_id);
+
+			if (!succes_refused) {
+				handle_error(res, "error in refused other notifications", 400);
+				return;
+			}
+		}
+
+		//? if action == refused -> refuse the notification
+		std::cout << action << std::endl;
+		res.code = 200;
+		crow::json::wvalue data;
+		data["id"] = notification.get()->get_id();
+		data["sender_id"] = notification.get()->get_sender_id();
+		data["service_id"] = notification.get()->get_service_id();
+		data["status"] = notification.get()->get_status();
+		data["created_at"] = notification.get()->get_created_at();
+		data["updated_at"] = notification.get()->get_updated_at();
+		res.write(data.dump());
+
+		res.end();
+	} catch (const std::exception& e) {
+		std::cerr << e.what() << '\n';
 	}
-
-	//? check if action = accepted || refused
-	if (!(std::string(action) == NotificationStatus::ACCEPTED || std::string(action) == NotificationStatus::REFUSED)) {
-		handle_error(res, "action not valid value", 400);
-		return;
-	}
-
-	//? if action == accepted -> accept the notification and refused others
-
-	if (action == NotificationStatus::REFUSED) {
-		std::unique_ptr<NotificationModel> notification_refued = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id);
-	}
-
-	//? if action == refused -> refuse the notification
-	std::cout << action << std::endl;
-	res.code = 200;
-	res.body = "hola";
-	res.end();
 }

@@ -21,7 +21,7 @@ TEST(UpdateAdminAuth, update_admin_not_auth) {
 	EXPECT_EQ(response.status_code, 404);
 	auto json = nlohmann::json::parse(response.text);
 	EXPECT_TRUE(json.contains("error"));
-	EXPECT_EQ(json["error"], "not token provided");
+	EXPECT_EQ(json["error"], "no token provided");
 }
 
 /*
@@ -97,8 +97,7 @@ class UpdateAdminNotAdmin : public testing::Test {
 
 	void SetUp() override {
 		register_admin();
-
-		sleep(1);
+ 
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -116,7 +115,7 @@ class UpdateAdminNotAdmin : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+
 		register_neighbor(_community_id_);
 	}
 
@@ -128,7 +127,6 @@ class UpdateAdminNotAdmin : public testing::Test {
 };
 
 TEST_F(UpdateAdminNotAdmin, update_admin_not_admin) {
-	sleep(1);
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + _admin_id_;
 	auto response = cpr::Put(cpr::Url{url_service}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
@@ -187,7 +185,6 @@ class UpdateAdminInvalidId : public testing::Test {
 };
 
 TEST_F(UpdateAdminInvalidId, update_admin_invalid_id) {
-	sleep(1);
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + "123";
 	auto response = cpr::Put(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
@@ -246,7 +243,6 @@ class UpdateAdminNotFound : public testing::Test {
 };
 
 TEST_F(UpdateAdminNotFound, update_admin_not_found) {
-	sleep(1);
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + "d39f6c52-5de7-44b6-9ea4-87ccb1055097";
 	auto response = cpr::Put(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
@@ -329,7 +325,7 @@ class UpdateAdminCommunityB : public testing::Test {
 
 	void SetUp() override {
 		register_admin();
-		sleep(1);
+
 		register_admin1();
 	}
 
@@ -394,7 +390,6 @@ class UpdateAdminInvalidUsername : public testing::Test {
 };
 
 TEST_F(UpdateAdminInvalidUsername, update_admin_invalid_username) {
-	sleep(1);
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + _admin_id_;
 	nlohmann::json update = {
 		{"username", "1"}};
@@ -406,7 +401,6 @@ TEST_F(UpdateAdminInvalidUsername, update_admin_invalid_username) {
 }
 
 TEST_F(UpdateAdminInvalidUsername, update_admin_invalid_balance) {
-	sleep(1);
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + _admin_id_;
 	nlohmann::json update = {
 		{"balance", "-1"}};
@@ -418,7 +412,6 @@ TEST_F(UpdateAdminInvalidUsername, update_admin_invalid_balance) {
 }
 
 TEST_F(UpdateAdminInvalidUsername, update_admin_succes) {
-	sleep(1);
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + _admin_id_;
 	nlohmann::json update = {
 		{"balance", "1"},

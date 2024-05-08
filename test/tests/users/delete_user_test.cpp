@@ -23,7 +23,7 @@ class DeleteUserById : public testing::Test {
 			{"email", "example@gmail.com"},
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
-			{"type", "admin"},
+			{"type", "admin"}, 
 			{"community_name", "example_community_name"}};
 
 		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
@@ -75,7 +75,7 @@ class DeleteUserById : public testing::Test {
 	void SetUp() override {
 		register_admin();
 
-		sleep(1);
+		
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -93,7 +93,7 @@ class DeleteUserById : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+		
 		register_neighbor(community_id);
 	}
 
@@ -105,7 +105,7 @@ class DeleteUserById : public testing::Test {
 };
 
 TEST_F(DeleteUserById, delete_by_id_admin_succes) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + neighbor_id;
 
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", admin_token}}, cpr::Header{{"Content-Type", "application/json"}});
@@ -116,7 +116,7 @@ TEST_F(DeleteUserById, delete_by_id_admin_succes) {
 }
 
 TEST_F(DeleteUserById, delete_by_id_neighbor_fail) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + admin_token;
 
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", neighbor_token}}, cpr::Header{{"Content-Type", "application/json"}});
@@ -127,7 +127,7 @@ TEST_F(DeleteUserById, delete_by_id_neighbor_fail) {
 }
 
 TEST_F(DeleteUserById, delete_by_id_admin_invalid_id) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/6fe43f0-8b97";
 
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", admin_token}}, cpr::Header{{"Content-Type", "application/json"}});
@@ -138,7 +138,7 @@ TEST_F(DeleteUserById, delete_by_id_admin_invalid_id) {
 }
 
 TEST_F(DeleteUserById, delete_by_id_admin_not_found) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/76fe43f0-8b97-4079-94e8-ef6f10d759b0";
 
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", admin_token}}, cpr::Header{{"Content-Type", "application/json"}});
@@ -246,7 +246,7 @@ class DeleteUserByIdDiffCommunity : public testing::Test {
 	void SetUp() override {
 		register_admin();
 
-		sleep(1);
+		
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -264,7 +264,7 @@ class DeleteUserByIdDiffCommunity : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+		
 		register_neighbor(community_id);
 		register_admin2();
 	}
@@ -277,7 +277,7 @@ class DeleteUserByIdDiffCommunity : public testing::Test {
 };
 
 TEST_F(DeleteUserByIdDiffCommunity, delete_by_id_admin_diff_community) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/" + neighbor_id;
 	;
 
@@ -355,7 +355,7 @@ class DeleteUserSelf : public testing::Test {
 	void SetUp() override {
 		register_admin();
 
-		sleep(1);
+		
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -373,7 +373,7 @@ class DeleteUserSelf : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+		
 		register_neighbor(community_id);
 	}
 
@@ -385,7 +385,7 @@ class DeleteUserSelf : public testing::Test {
 };
 
 TEST_F(DeleteUserSelf, delete_self_succes) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/self";
 
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", neighbor_token}}, cpr::Header{{"Content-Type", "application/json"}});
@@ -396,7 +396,7 @@ TEST_F(DeleteUserSelf, delete_self_succes) {
 }
 
 TEST_F(DeleteUserSelf, delete_self_admin) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/users/self";
 
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", admin_token}}, cpr::Header{{"Content-Type", "application/json"}});

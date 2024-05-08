@@ -85,3 +85,28 @@ std::unique_ptr<NotificationModel> NotificationModel::handle_notification_status
 		return nullptr;
 	}
 }
+
+bool NotificationModel::refused_notifications(pqxx::connection& db, const std::string& service_id, const std::string& notification_id) {
+    try {
+        pqxx::work txn(db);
+
+        // Ejecutar la consulta para actualizar las notificaciones
+        std::string sql = R"(
+            UPDATE notifications
+            SET status = 'refused', updated_at = CURRENT_TIMESTAMP
+            WHERE service_id = $1
+              AND id != $2
+        )";
+        pqxx::result result = txn.exec_params(sql, service_id, notification_id);
+
+        // Confirmar la transacción
+        txn.commit();
+
+        // Devolver true indicando que la operación fue exitosa
+        return true;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error al actualizar las notificaciones: " << e.what() << '\n';
+        return false;  // Devolver false indicando que la operación falló
+    }
+}

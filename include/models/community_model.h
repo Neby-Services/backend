@@ -24,7 +24,7 @@ class CommunityModel {
 	std::string get_created_at() const;
 	std::string get_updated_at() const;
 
-	static std::string generate_community_code();
+	static std::string generate_community_code(const std::string& seed);
 
 	static std::unique_ptr<CommunityModel> create_community(pqxx::connection& db, const std::string& name, bool throw_when_null = false);
 
