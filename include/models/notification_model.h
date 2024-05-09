@@ -31,4 +31,6 @@ class NotificationModel {
 	static std::unique_ptr<NotificationModel> handle_notification_status(pqxx::connection& db, const std::string& status, const std::string& notification_id, bool throw_when_null = false);
 
 	static bool refused_notifications(pqxx::connection& db, const std::string& service_id, const std::string& notification_id);
+
+	static std::unique_ptr<NotificationModel> get_notification_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
 };

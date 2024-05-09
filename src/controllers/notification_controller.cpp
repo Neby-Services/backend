@@ -74,6 +74,8 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 	try {
 		//? extarct query string param -> action = accepeted | refused
 		auto action = req.url_params.get("action");
+		crow::json::rvalue body = crow::json::load(req.body);
+		std::string request_id = body["id"].s();
 
 		//? check if action query param exists
 		if (!action) {
@@ -87,16 +89,32 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 			return;
 		}
 
+		//? check if the notificaction exists
+		std::unique_ptr notification = NotificationModel::get_notification_by_id(db, notification_id);
+
+		if (!notification) {
+			handle_error(res, "notification not found", 400);
+			return;
+		}
+
+		//? check if the user making the request is the creator of the service
+		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, notification.get()->get_service_id(), true);
+
+		if (request_id != service.get()->get_creator_id()) {
+			handle_error(res, "you are not the creator of the service", 400);
+			return;
+		}
+
 		//? if action == accepted -> accept the notification and refused others
 
-		std::unique_ptr<NotificationModel> notification;
+		std::unique_ptr<NotificationModel> updated_notification;
 
 		if (action == NotificationStatus::REFUSED) {
-			notification = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id, true);
+			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id, true);
 		} else {
-			notification = NotificationModel::handle_notification_status(db, NotificationStatus::ACCEPTED, notification_id, true);
+			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::ACCEPTED, notification_id, true);
 
-			bool succes_refused = NotificationModel::refused_notifications(db, notification.get()->get_service_id(), notification_id);
+			bool succes_refused = NotificationModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);
 
 			if (!succes_refused) {
 				handle_error(res, "error in refused other notifications", 400);
@@ -108,12 +126,12 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 		std::cout << action << std::endl;
 		res.code = 200;
 		crow::json::wvalue data;
-		data["id"] = notification.get()->get_id();
-		data["sender_id"] = notification.get()->get_sender_id();
-		data["service_id"] = notification.get()->get_service_id();
-		data["status"] = notification.get()->get_status();
-		data["created_at"] = notification.get()->get_created_at();
-		data["updated_at"] = notification.get()->get_updated_at();
+		data["id"] = updated_notification.get()->get_id();
+		data["sender_id"] = updated_notification.get()->get_sender_id();
+		data["service_id"] = updated_notification.get()->get_service_id();
+		data["status"] = updated_notification.get()->get_status();
+		data["created_at"] = updated_notification.get()->get_created_at();
+		data["updated_at"] = updated_notification.get()->get_updated_at();
 		res.write(data.dump());
 
 		res.end();
