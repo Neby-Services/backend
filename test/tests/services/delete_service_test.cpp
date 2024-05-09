@@ -21,7 +21,7 @@ TEST(DeleteServiceAuth, delete_service_not_auth) {
 	EXPECT_EQ(response.status_code, 404);
 	auto json = nlohmann::json::parse(response.text);
 	EXPECT_TRUE(json.contains("error"));
-	EXPECT_EQ(json["error"], "not token provided");
+	EXPECT_EQ(json["error"], "no token provided");
 }
 
 /*
@@ -108,7 +108,7 @@ class DeleteServiceNeitherAuth : public testing::Test {
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
 
-		sleep(1);
+		
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -126,7 +126,7 @@ class DeleteServiceNeitherAuth : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+		
 		register_neighbor(_community_id_);
 	}
 
@@ -228,7 +228,7 @@ class DeleteServiceAdminBAuth : public testing::Test {
 		auto s_create = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{new_service.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
-		sleep(1);
+		
 		register_admin1();
 	}
 
@@ -320,7 +320,7 @@ class DeleteServiceCreatorAuth : public testing::Test {
 	void SetUp() override {
 		register_admin();
 
-		sleep(1);
+		
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -338,7 +338,7 @@ class DeleteServiceCreatorAuth : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+		
 		register_neighbor(_community_id_);
 		std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
 		nlohmann::json new_service = {
@@ -359,7 +359,7 @@ class DeleteServiceCreatorAuth : public testing::Test {
 };
 
 TEST_F(DeleteServiceCreatorAuth, delete_service_creator) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
@@ -497,7 +497,7 @@ class DeleteServiceAdminAuth : public testing::Test {
 	void SetUp() override {
 		register_admin();
 
-		sleep(1);
+		
 		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
@@ -515,7 +515,7 @@ class DeleteServiceAdminAuth : public testing::Test {
 		} else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
-		sleep(1);
+		
 		register_neighbor(_community_id_);
 		std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
 		nlohmann::json new_service = {
@@ -536,7 +536,7 @@ class DeleteServiceAdminAuth : public testing::Test {
 };
 
 TEST_F(DeleteServiceAdminAuth, delete_service_admin) {
-	sleep(1);
+	
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 	auto response = cpr::Delete(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);

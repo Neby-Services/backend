@@ -5,5 +5,6 @@
 #include <middlewares/verify_jwt.h>
 #include <utils/common.h>
 #include <pqxx/pqxx>
+#include <db/connection_pool.h>
 
-void initialize_auth_routes(NebyApp& app, pqxx::connection& db);
+void initialize_auth_routes(NebyApp& app);

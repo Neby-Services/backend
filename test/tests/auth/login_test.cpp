@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "../common.h"
-
+ 
 class LoginTest : public testing::Test {
 	protected:
 	std::string email_;
@@ -21,18 +21,18 @@ class LoginTest : public testing::Test {
 			{"email", email_},
 			{"username", "tupapiloko"},
 			{"password", password_},
-			{"type", "admin"},
+			{"type", "admin"},  
 			{"community_name", "example_community_name"}};
 
 		auto r_register = cpr::Post(cpr::Url{url_register}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 	}
-
+ 
 	void TearDown() override {
 		clean_user_table();
 		clean_community_table();
 	}
 };
-
+ 
 class LoginErrorsTest : public testing::Test {
 	protected:
 	std::string email_;
