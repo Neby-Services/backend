@@ -112,6 +112,33 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 		if (action == NotificationStatus::REFUSED) {
 			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id, true);
 		} else {
+			std::unique_ptr<UserModel> notificationCreator = UserModel::get_user_by_id(db, notification->get_sender_id());
+			std::unique_ptr<UserModel> serviceCreator = UserModel::get_user_by_id(db, service->get_creator_id());
+
+			if (service->get_type() == "offered") {
+				if (notificationCreator->get_balance() < service->get_price()) {
+					handle_error(res, "Notification sender does not have enough coins to pay for the service", 400);
+					return;
+				}
+				else {
+					int new_sender_balance = notificationCreator->get_balance() - service->get_price();
+					int new_creator_balance = serviceCreator->get_balance() + service->get_price();
+					UserModel::update_user_admin(db, notificationCreator->get_id(), notificationCreator->get_username(), new_sender_balance);
+					UserModel::update_user_admin(db, serviceCreator->get_id(), serviceCreator->get_username(), new_creator_balance);
+				}
+			}
+			else {
+				if (serviceCreator->get_balance() < service->get_price()) {
+					handle_error(res, "You don't have the coins to pay for this request", 400);
+					return;
+				}
+				else {
+					int new_sender_balance = notificationCreator->get_balance() + service->get_price();
+					int new_creator_balance = serviceCreator->get_balance() - service->get_price();
+					UserModel::update_user_admin(db, notificationCreator->get_id(), notificationCreator->get_username(), new_sender_balance);
+					UserModel::update_user_admin(db, serviceCreator->get_id(), serviceCreator->get_username(), new_creator_balance);
+				}
+			}
 			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::ACCEPTED, notification_id, true);
 
 			bool succes_refused = NotificationModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);

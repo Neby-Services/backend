@@ -3,6 +3,7 @@
 #include <crow.h>
 #include <models/notification_model.h>
 #include <models/service_model.h>
+#include <models/user_model.h>
 #include <utils/common.h>
 #include <utils/utils.h>
 #include <format>
