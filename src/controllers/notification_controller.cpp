@@ -115,9 +115,9 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 			std::unique_ptr<UserModel> notificationCreator = UserModel::get_user_by_id(db, notification->get_sender_id());
 			std::unique_ptr<UserModel> serviceCreator = UserModel::get_user_by_id(db, service->get_creator_id());
 
-			if (service->get_type() == "offered") {
+			if (service->get_type() == ServiceType::OFFERED) {
 				if (notificationCreator->get_balance() < service->get_price()) {
-					handle_error(res, "Notification sender does not have enough coins to pay for the service", 400);
+					handle_error(res, "notification sender does not have enough coins to pay for the service", 400);
 					return;
 				}
 				else {
@@ -129,7 +129,7 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 			}
 			else {
 				if (serviceCreator->get_balance() < service->get_price()) {
-					handle_error(res, "You don't have the coins to pay for this request", 400);
+					handle_error(res, "you don't have the coins to pay for this request", 400);
 					return;
 				}
 				else {
