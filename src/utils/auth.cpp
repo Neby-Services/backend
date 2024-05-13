@@ -2,12 +2,11 @@
 
 std::string SECRET_JWT = std::string(std::getenv("SECRET_JWT"));
 
-std::string create_token(const std::string& userId, const std::string& type) {
+std::string create_token(std::unique_ptr<UserModel>& user) {
 	auto token = jwt::create()
 					 .set_type("JWS")
 					 .set_issuer("auth0")
-					 .set_payload_claim("id", jwt::claim(std::string(userId)))
-					 .set_payload_claim("type", jwt::claim(std::string(type)))
+					 .set_payload_claim("id", jwt::claim(std::string(user.get()->get_id())))
 					 .sign(jwt::algorithm::hs256{SECRET_JWT});
 
 	return token;

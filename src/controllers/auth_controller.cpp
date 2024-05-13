@@ -1,10 +1,4 @@
 #include <controllers/auth_controller.h>
-#include <utils/auth.h>
-#include <utils/user_validations.h>
-#include <bcrypt/BCrypt.hpp>
-#include <ctime>  // Include the ctime header for time functions
-#include <iomanip>
-#include <string>
 
 void AuthController::register_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
@@ -40,7 +34,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		} else if (type == Roles::NEIGHBOR) {
 			std::unique_ptr<CommunityModel> community = CommunityModel::get_community_by_code(db, body["community_code"].s());
 			if (!community) {
-				handle_error(res, "community does not exist", 404);
+				handle_error(res, "community does not exists", 404);
 				return;
 			}
 			community_id = community.get()->get_id();
@@ -53,7 +47,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			return;
 		}
 
-		std::string jwtToken = create_token(user.get()->get_id(), type);
+		std::string jwtToken = create_token(user);
 		int expirationTimeSeconds = 3600;
 		time_t now = time(0);
 		time_t expirationTime = now + expirationTimeSeconds;
@@ -86,16 +80,6 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 
 void AuthController::login_user(pqxx::connection &db, const crow::request &req, crow::response &res) {
 	try {
-		/* 	crow::json::rvalue body = crow::json::load(req.body);
-
-			std::string id = body["id"].s();
-
-			crow::json::wvalue data({{"id", id}});
-
-			res.code = 200;
-			res.write(data.dump());
-
-			res.end(); */
 		if (!is_correct_body_login(req, res)) return;
 
 		crow::json::rvalue body = crow::json::load(req.body);
@@ -114,7 +98,7 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 		std::string password = body["password"].s();
 
 		if (BCrypt::validatePassword(password, encrypt_password)) {
-			std::string jwtToken = create_token(user.get()->get_id(), user.get()->get_type());
+			std::string jwtToken = create_token(user);
 
 			int expirationTimeSeconds = 3600;
 			time_t now = time(0);
@@ -133,22 +117,54 @@ void AuthController::login_user(pqxx::connection &db, const crow::request &req, 
 
 			res.set_header("Set-Cookie", cookieStream.str());
 
-			crow::json::wvalue data;
-			data["user"] = {
-				{"id", user.get()->get_id()},
-				{"type", user.get()->get_type()}};
+			crow::json::wvalue data(
+				{
+					{"id", user.get()->get_id()},
+				});
 
 			res.code = 200;
 			res.write(data.dump());
 
 			res.end();
 		} else {
-			handle_error(res, "password invalid", 400);
+			handle_error(res, "invalid password", 400);
 			return;
 		}
 
 	} catch (const std::exception &e) {
 		std::cerr << "Error in register_user: " << e.what() << std::endl;
 		handle_error(res, "INTERNAL SERVER ERROR", 500);
+	}
+}
+
+void AuthController::get_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
+		crow::json::rvalue body = crow::json::load(req.body);
+		std::string user_id = body["id"].s();
+		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
+
+		if (!user) {
+			handle_error(res, "user not found", 404);
+			return;
+		}
+
+		crow::json::wvalue user_data;
+		user_data["id"] = user.get()->get_id();
+		user_data["community_id"] = user.get()->get_community_id();
+		user_data["username"] = user.get()->get_username();
+		user_data["email"] = user.get()->get_email();
+		user_data["type"] = user.get()->get_type();
+		user_data["balance"] = user.get()->get_balance();
+		user_data["created_at"] = user.get()->get_created_at();
+		user_data["updated_at"] = user.get()->get_updated_at();
+
+		crow::json::wvalue data{{"user", user_data}};
+		res.code = 200;
+		res.write(data.dump());
+		res.end();
+
+	} catch (const std::exception &e) {
+		std::cerr << "Error in get self: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
 	}
 }

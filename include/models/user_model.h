@@ -20,6 +20,9 @@ class UserModel {
 	std::string _updated_at;
 
 	public:
+	UserModel();
+	UserModel(std::string id, std::string username);
+
 	UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at);
 
 	std::string get_id() const;
@@ -45,4 +48,5 @@ class UserModel {
 
 	static bool delete_user_by_id(pqxx::connection& db, const std::string& id);
 	static bool update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username = "", const std::string email = "", const std::string password = "");
+	static bool update_user_admin(pqxx::connection& db, const std::string& id, const std::string username, const int balance);
 };

@@ -1,5 +1,8 @@
 #include <models/user_model.h>
 
+UserModel::UserModel() : _id("") {}
+UserModel::UserModel(std::string id, std::string username) : _id(id), _username(username) {}
+
 UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at) {}
 
 std::string UserModel::get_id() const { return _id; }
@@ -150,6 +153,19 @@ bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, c
 		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
 		if (email != "") pqxx::result result = txn.exec_params("UPDATE users SET email = $1 WHERE id = $2", email, id);
 		if (password != "") pqxx::result result = txn.exec_params("UPDATE users SET password = $1 WHERE id = $2", password, id);
+		txn.commit();
+		return true;
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to update user: " << e.what() << std::endl;
+		return false;
+	}
+}
+
+bool UserModel::update_user_admin(pqxx::connection& db, const std::string& id, const std::string username, const int balance) {
+	try {
+		pqxx::work txn(db);
+		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
+		if (!(balance < 0)) pqxx::result result = txn.exec_params("UPDATE users SET balance = $1 WHERE id = $2", balance, id);
 		txn.commit();
 		return true;
 	} catch (const std::exception& e) {

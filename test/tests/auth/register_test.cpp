@@ -1,4 +1,3 @@
-#include <common.h>
 #include <cpr/cpr.h>
 #include <gtest/gtest.h>
 #include <cstdlib>	// Para std::getenv
@@ -6,44 +5,27 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
+#include "../common.h"
 
-// Declaración de la función limpiarTablaUsers
-void limpiarTablaUsers() {
-	try {
-		// Establecer la conexión a la base de datos
-		std::string connection_string = std::format("dbname={} user={} password={} host={} port={}", DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT);
-		pqxx::connection conn(connection_string);
-		// pqxx::connection conn("dbname=mydatabase user=myuser password=mypassword hostaddr=127.0.0.1 port=5432");
-
-		if (conn.is_open()) {
-			// Crear un objeto de transacción
-			pqxx::work txn(conn);
-
-			// Ejecutar la consulta para limpiar la tabla users
-			txn.exec("DELETE FROM users");
-			txn.exec("DELETE FROM communities");
-
-			// Confirmar la transacción
-			txn.commit();
-
-		} else {
-			std::cerr << "Error al conectar a la base de datos." << std::endl;
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "Error de excepción: " << e.what() << std::endl;
-	}
-}
 class RegisterValidations : public ::testing::Test {
 	protected:
 	void TearDown() override {
-		// Llamar a la función limpiarTablaUsers después de que se complete el test
-		limpiarTablaUsers();
+		clean_user_table();
+		clean_community_table();
+	}
+};
+
+class RegisterGeneralErrors : public ::testing::Test {
+	protected:
+	void TearDown() override {
+		clean_community_table();
+		clean_user_table();
 	}
 };
 
 // ** ---------- MISSING FIELDS ON REQ.BODY TESTS ---------- ** \\
 
-TEST(REGISTER_MISSING_FIELDS, MissingEmail) {
+TEST(REGISTER_MISSING_FIELDS, missing_email) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json post_data = {
@@ -57,7 +39,7 @@ TEST(REGISTER_MISSING_FIELDS, MissingEmail) {
 	EXPECT_EQ(response.status_code, 404) << "expect 404 status code with email missing";
 }
 
-TEST(REGISTER_MISSING_FIELDS, MissingUsername) {
+TEST(REGISTER_MISSING_FIELDS, missing_username) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json post_data = {
@@ -71,7 +53,7 @@ TEST(REGISTER_MISSING_FIELDS, MissingUsername) {
 	EXPECT_EQ(response.status_code, 404) << "expect 404 status code with username missing";
 }
 
-TEST(REGISTER_MISSING_FIELDS, MissingPassword) {
+TEST(REGISTER_MISSING_FIELDS, missing_password) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json post_data = {
@@ -85,7 +67,7 @@ TEST(REGISTER_MISSING_FIELDS, MissingPassword) {
 	EXPECT_EQ(response.status_code, 404) << "expect 404 status code with password missing";
 }
 
-TEST(REGISTER_MISSING_FIELDS, MissingType) {
+TEST(REGISTER_MISSING_FIELDS, missing_type) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json post_data = {
@@ -99,7 +81,7 @@ TEST(REGISTER_MISSING_FIELDS, MissingType) {
 	EXPECT_EQ(response.status_code, 404) << "expect 404 status code with type missing";
 }
 
-TEST(REGISTER_MISSING_FIELDS, MissingCommunityName) {
+TEST(REGISTER_MISSING_FIELDS, missing_community_name) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json post_data = {
@@ -114,7 +96,7 @@ TEST(REGISTER_MISSING_FIELDS, MissingCommunityName) {
 	EXPECT_EQ(response.status_code, 404) << "expect 404 status code with community_name missing";
 }
 
-TEST(REGISTER_MISSING_FIELDS, MissingCommunityCode) {
+TEST(REGISTER_MISSING_FIELDS, missing_community_code) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json post_data = {
@@ -131,10 +113,9 @@ TEST(REGISTER_MISSING_FIELDS, MissingCommunityCode) {
 
 // ** ---------- VALIDATION REQ.BODY FIELDS TESTS ---------- ** \\
 
-TEST_F(RegisterValidations, CorrectEmail) {
+TEST_F(RegisterValidations, correct_email) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-	// Lista de direcciones de correo electrónico correctas
 	std::vector<std::string> correct_emails = {
 		"user@example.com",
 		"user123@example.com",
@@ -147,7 +128,6 @@ TEST_F(RegisterValidations, CorrectEmail) {
 		"user@example.xyz"};
 
 	for (const auto& email : correct_emails) {
-		// Verificar que el correo electrónico sea correcto antes de enviar la solicitud
 		nlohmann::json post_data = {
 			{"email", email},
 			{"password", "F!sh1ngR0ck5"},
@@ -157,17 +137,16 @@ TEST_F(RegisterValidations, CorrectEmail) {
 
 		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
-		// Verificar que el servidor responda con el código de estado 201 (Created)
 		EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for correct email: " << email;
-		// Limpiar la tabla users después de cada prueba
-		limpiarTablaUsers();
+
+		clean_community_table();
+		clean_user_table();
 	}
 }
 
-TEST_F(RegisterValidations, IncorrectEmail) {
+TEST_F(RegisterValidations, incorrect_email) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-	// Lista de direcciones de correo electrónico incorrectas
 	std::vector<std::string> incorrect_emails = {
 		"example%@gmail.com",
 		"example@domain.",
@@ -194,10 +173,9 @@ TEST_F(RegisterValidations, IncorrectEmail) {
 	}
 }
 
-TEST_F(RegisterValidations, Correct_password) {
+TEST_F(RegisterValidations, correct_password) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-	// Lista de direcciones de correo electrónico incorrectas
 	std::vector<std::string> incorrect_passwords = {
 		"Tr0ub4dor&3",
 		"P@ssw0rd!",
@@ -216,14 +194,14 @@ TEST_F(RegisterValidations, Correct_password) {
 		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
 		EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for incorrect password: " << password;
-		limpiarTablaUsers();
+		clean_community_table();
+		clean_user_table();
 	}
 }
 
-TEST_F(RegisterValidations, Incorrect_Password) {
+TEST_F(RegisterValidations, incorrect_password) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-	// Lista de direcciones de correo electrónico incorrectas
 	std::vector<std::string> incorrect_passwords = {
 		"password", "12345678", "qwerty", "letmein", "abc123"};
 
@@ -241,10 +219,9 @@ TEST_F(RegisterValidations, Incorrect_Password) {
 	}
 }
 
-TEST_F(RegisterValidations, Incorrect_Username) {
+TEST_F(RegisterValidations, incorrect_username) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-	// Lista de direcciones de correo electrónico incorrectas
 	std::vector<std::string> incorrect_usernames = {
 		"Invalid!User",
 		"SpacesUser ",
@@ -266,10 +243,9 @@ TEST_F(RegisterValidations, Incorrect_Username) {
 	}
 }
 
-TEST_F(RegisterValidations, Correct_username) {
+TEST_F(RegisterValidations, correct_username) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
-	// Lista de direcciones de correo electrónico incorrectas
 	std::vector<std::string> incorrect_usernames = {
 		"SecureUser1",
 		"Usuario123",
@@ -288,11 +264,12 @@ TEST_F(RegisterValidations, Correct_username) {
 		auto response = cpr::Post(cpr::Url{url}, cpr::Body{post_data.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 
 		EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for incorrect username: " << username;
-		limpiarTablaUsers();
+		clean_community_table();
+		clean_user_table();
 	}
 }
 
-TEST_F(RegisterValidations, Incorrect_type) {
+TEST_F(RegisterValidations, incorrect_type) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	std::string incorrect_type = "type_error";
@@ -311,14 +288,8 @@ TEST_F(RegisterValidations, Incorrect_type) {
 
 // ** ---------- GENERAL ERRORS TESTS ---------- ** \\
 
-class RegisterGeneralErrors : public ::testing::Test {
-	protected:
-	void TearDown() override {
-		limpiarTablaUsers();
-	}
-};
 
-TEST_F(RegisterGeneralErrors, UserAlredyExist) {
+TEST_F(RegisterGeneralErrors, user_already_exists) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json new_user = {
@@ -349,7 +320,7 @@ TEST_F(RegisterGeneralErrors, UserAlredyExist) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_email = json["error"];
-	EXPECT_EQ(error_message_email, "user already exists");
+	EXPECT_EQ(error_message_email, "email already in use");
 	EXPECT_EQ(response_email.status_code, 400);
 
 	auto response_username = cpr::Post(cpr::Url{url}, cpr::Body{user_exist_username.dump()}, cpr::Header{{"Content-Type", "application/json"}});
@@ -358,11 +329,11 @@ TEST_F(RegisterGeneralErrors, UserAlredyExist) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_username = json["error"];
-	EXPECT_EQ(error_message_username, "user already exists");
+	EXPECT_EQ(error_message_username, "email already in use");
 	EXPECT_EQ(response_username.status_code, 400);
 }
 
-TEST_F(RegisterGeneralErrors, CorrectSignup) {
+TEST_F(RegisterGeneralErrors, correct_signup) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json new_user = {
@@ -382,15 +353,13 @@ TEST_F(RegisterGeneralErrors, CorrectSignup) {
 
 	std::string set_cookie_header = response.header["Set-Cookie"];
 
-	// Buscar la cookie "token" dentro del encabezado "Set-Cookie"
 	size_t token_pos = set_cookie_header.find("token=");
 	bool token_found = token_pos != std::string::npos;
 
-	// Verificar que se encontró la cookie "token"
 	EXPECT_TRUE(token_found);
 }
 
-TEST_F(RegisterGeneralErrors, Community_Not_Exists) {
+TEST_F(RegisterGeneralErrors, community_not_exists) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 	nlohmann::json new_user = {
@@ -408,5 +377,5 @@ TEST_F(RegisterGeneralErrors, Community_Not_Exists) {
 
 	ASSERT_TRUE(json.contains("error"));
 	std::string error_message_username = json["error"];
-	EXPECT_EQ(error_message_username, "not community exists");
+	EXPECT_EQ(error_message_username, "community does not exists");
 }

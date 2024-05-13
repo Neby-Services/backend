@@ -8,12 +8,20 @@ std::string CommunityModel::get_code() const { return _code; }
 std::string CommunityModel::get_created_at() const { return _created_at; }
 std::string CommunityModel::get_updated_at() const { return _updated_at; }
 
-std::string CommunityModel::generate_community_code() {
+std::string CommunityModel::generate_community_code(const std::string& seed) {
 	const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	const int codeLength = 8;
 	std::string code;
 
-	std::srand(std::time(nullptr));
+	// Obtener la hora actual en segundos
+	std::time_t now = std::time(nullptr);
+
+	// Convertir la semilla y la hora actual en una cadena para usar como base para la generación de código
+	std::string seedTime = seed + std::to_string(now);
+
+	// Usar std::hash para obtener una semilla de generación única
+	std::size_t seedValue = std::hash<std::string>{}(seedTime);
+	std::srand(seedValue);
 
 	for (int i = 0; i < codeLength; ++i) {
 		code += charset[std::rand() % charset.size()];
@@ -25,7 +33,7 @@ std::string CommunityModel::generate_community_code() {
 std::unique_ptr<CommunityModel> CommunityModel::create_community(pqxx::connection& db, const std::string& name, bool throw_when_null) {
 	pqxx::work txn(db);
 
-	std::string code = generate_community_code();
+	std::string code = generate_community_code(name);
 
 	pqxx::result result = txn.exec_params("INSERT INTO communities (name, code) VALUES ($1, $2) RETURNING id, name, code, created_at, updated_at", name, code);
 
