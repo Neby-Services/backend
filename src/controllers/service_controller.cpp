@@ -133,7 +133,6 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		std::vector<std::unique_ptr<ServiceModel>> all_services;
 
 		auto status = req.url_params.get("status");
-
 		if (!status) {
 			all_services = ServiceModel::get_services(db, user.get()->get_community_id());
 
@@ -198,6 +197,83 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		res.end();
 	} catch (const std::exception &e) {
 		std::cerr << "Error getting services: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
+	}
+}
+
+void ServiceController::get_services_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+	try {
+		crow::json::rvalue get = crow::json::load(req.body);
+		std::string user_id = get["id"].s();
+
+		std::vector<std::unique_ptr<ServiceModel>> all_services;
+
+		auto status = req.url_params.get("status");
+
+		if (!status) {
+			all_services = ServiceModel::get_services_self(db, user_id);
+
+		} else if (status && (std::string(status) == ServiceStatus::CLOSED || std::string(status) == ServiceStatus::OPEN)) {
+			all_services = ServiceModel::get_services_self(db, user_id, status);
+		} else {
+			handle_error(res, "status not valid value", 400);
+			return;
+		}
+
+		crow::json::wvalue::list services;
+		for (unsigned int i = 0; i < all_services.size(); ++i) {
+			crow::json::wvalue service;
+
+			service["id"] = all_services[i].get()->get_id();
+			service["creator_id"] = all_services[i].get()->get_creator_id();
+			if (all_services[i].get()->get_buyer_id().has_value())
+				service["buyer_id"] = all_services[i].get()->get_buyer_id().value();
+			service["title"] = all_services[i].get()->get_title();
+			service["description"] = all_services[i].get()->get_description();
+			service["price"] = all_services[i].get()->get_price();
+			service["status"] = all_services[i].get()->get_status();
+			service["type"] = all_services[i].get()->get_type();
+			if (all_services[i].get()->get_image_url().has_value())
+				service["image_url"] = all_services[i].get()->get_image_url().value();
+			service["created_at"] = all_services[i].get()->get_created_at();
+			service["updated_at"] = all_services[i].get()->get_updated_at();
+
+			if (all_services[i].get()->get_creator().has_value()) {
+				crow::json::wvalue creator;
+				creator["id"] = all_services[i].get()->get_creator().value().get_id();
+				creator["username"] = all_services[i].get()->get_creator().value().get_username();
+				creator["type"] = all_services[i].get()->get_creator().value().get_type();
+				creator["email"] = all_services[i].get()->get_creator().value().get_email();
+				creator["balance"] = all_services[i].get()->get_creator().value().get_balance();
+				creator["created_at"] = all_services[i].get()->get_creator().value().get_created_at();
+				creator["updated_at"] = all_services[i].get()->get_creator().value().get_updated_at();
+
+				service["creator"] = crow::json::wvalue(creator);
+			}
+
+			if (all_services[i].get()->get_buyer().has_value()) {
+				crow::json::wvalue buyer;
+				buyer["id"] = all_services[i].get()->get_buyer().value().get_id();
+				buyer["username"] = all_services[i].get()->get_buyer().value().get_username();
+				buyer["type"] = all_services[i].get()->get_buyer().value().get_type();
+				buyer["email"] = all_services[i].get()->get_buyer().value().get_email();
+				buyer["balance"] = all_services[i].get()->get_buyer().value().get_balance();
+				buyer["created_at"] = all_services[i].get()->get_buyer().value().get_created_at();
+				buyer["updated_at"] = all_services[i].get()->get_buyer().value().get_updated_at();
+
+				service["buyer"] = crow::json::wvalue(buyer);
+			}
+
+			services.push_back(service);
+		}
+
+		crow::json::wvalue data{{"self_services", services}};
+
+		res.write(data.dump());
+		res.code = 200;
+		res.end();
+	} catch (const std::exception &e) {
+		std::cerr << "Error getting user services: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
 	}
 }
