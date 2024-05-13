@@ -1,13 +1,22 @@
 #pragma once
 #include <crow.h>
+#include <db/connection_pool.h>
 #include <middlewares/verify_jwt.h>
 #include <bcrypt/BCrypt.hpp>
+#include <cstdlib>
 #include <map>
 #include <string>
 
-using NebyApp = crow::App<VerifyJWT>;
 
-struct Roles {
+extern const std::string DB_NAME;
+extern const std::string DB_USER;
+extern const std::string DB_PASSWORD;
+extern const std::string DB_HOST;
+extern const int DB_PORT;
+extern const int HTTP_PORT;
+extern const std::string connection_string;
+
+struct Roles { 
 	static const std::string ADMIN;
 	static const std::string NEIGHBOR;
 };

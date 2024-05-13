@@ -7,13 +7,6 @@ std::string create_token(std::unique_ptr<UserModel>& user) {
 					 .set_type("JWS")
 					 .set_issuer("auth0")
 					 .set_payload_claim("id", jwt::claim(std::string(user.get()->get_id())))
-					 .set_payload_claim("type", jwt::claim(std::string(user.get()->get_type())))
-					 .set_payload_claim("username", jwt::claim(std::string(user.get()->get_username())))
-					 .set_payload_claim("community_id", jwt::claim(std::string(user.get()->get_community_id())))
-					 .set_payload_claim("email", jwt::claim(std::string(user.get()->get_email())))
-					 .set_payload_claim("balance", jwt::claim(std::to_string(user.get()->get_balance())))
-					 .set_payload_claim("created_at", jwt::claim(std::string(user.get()->get_created_at())))
-					 .set_payload_claim("updated_at", jwt::claim(std::string(user.get()->get_updated_at())))
 					 .sign(jwt::algorithm::hs256{SECRET_JWT});
 
 	return token;

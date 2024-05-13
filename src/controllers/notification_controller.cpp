@@ -7,6 +7,9 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 		std::string notifier_id = body["id"].s();
 		int notifier_balance = body["request_balance"].i();
 
+		std::cout << "balancation " << notifier_balance << std::endl;
+		std::cout << "id notfiier " << notifier_id << std::endl;
+
 		//? check if service exist
 		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id);
 		if (!service) {
@@ -64,5 +67,102 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 	} catch (const std::exception& e) {
 		std::cerr << "Error in create_notification: " << e.what() << std::endl;
 		handle_error(res, "internal server errror", 500);
+	}
+}
+
+void NotificationController::handle_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& notification_id) {
+	try {
+		//? extarct query string param -> action = accepeted | refused
+		auto action = req.url_params.get("action");
+		crow::json::rvalue body = crow::json::load(req.body);
+		std::string request_id = body["id"].s();
+
+		//? check if action query param exists
+		if (!action) {
+			handle_error(res, "string query param (action) not provided", 400);
+			return;
+		}
+
+		//? check if action = accepted || refused
+		if (!(std::string(action) == NotificationStatus::ACCEPTED || std::string(action) == NotificationStatus::REFUSED)) {
+			handle_error(res, "action not valid value", 400);
+			return;
+		}
+
+		//? check if the notificaction exists
+		std::unique_ptr notification = NotificationModel::get_notification_by_id(db, notification_id);
+
+		if (!notification) {
+			handle_error(res, "notification not found", 400);
+			return;
+		}
+
+		//? check if the user making the request is the creator of the service
+		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, notification.get()->get_service_id(), true);
+
+		if (request_id != service.get()->get_creator_id()) {
+			handle_error(res, "you are not the creator of the service", 400);
+			return;
+		}
+
+		//? if action == accepted -> accept the notification and refused others
+
+		std::unique_ptr<NotificationModel> updated_notification;
+
+		if (action == NotificationStatus::REFUSED) {
+			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::REFUSED, notification_id, true);
+		} else {
+			std::unique_ptr<UserModel> notificationCreator = UserModel::get_user_by_id(db, notification->get_sender_id());
+			std::unique_ptr<UserModel> serviceCreator = UserModel::get_user_by_id(db, service->get_creator_id());
+
+			if (service->get_type() == ServiceType::OFFERED) {
+				if (notificationCreator->get_balance() < service->get_price()) {
+					handle_error(res, "notification sender does not have enough coins to pay for the service", 400);
+					return;
+				}
+				else {
+					int new_sender_balance = notificationCreator->get_balance() - service->get_price();
+					int new_creator_balance = serviceCreator->get_balance() + service->get_price();
+					UserModel::update_user_admin(db, notificationCreator->get_id(), notificationCreator->get_username(), new_sender_balance);
+					UserModel::update_user_admin(db, serviceCreator->get_id(), serviceCreator->get_username(), new_creator_balance);
+				}
+			}
+			else {
+				if (serviceCreator->get_balance() < service->get_price()) {
+					handle_error(res, "you don't have the coins to pay for this request", 400);
+					return;
+				}
+				else {
+					int new_sender_balance = notificationCreator->get_balance() + service->get_price();
+					int new_creator_balance = serviceCreator->get_balance() - service->get_price();
+					UserModel::update_user_admin(db, notificationCreator->get_id(), notificationCreator->get_username(), new_sender_balance);
+					UserModel::update_user_admin(db, serviceCreator->get_id(), serviceCreator->get_username(), new_creator_balance);
+				}
+			}
+			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::ACCEPTED, notification_id, true);
+
+			bool succes_refused = NotificationModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);
+
+			if (!succes_refused) {
+				handle_error(res, "error in refused other notifications", 400);
+				return;
+			}
+		}
+
+		//? if action == refused -> refuse the notification
+		std::cout << action << std::endl;
+		res.code = 200;
+		crow::json::wvalue data;
+		data["id"] = updated_notification.get()->get_id();
+		data["sender_id"] = updated_notification.get()->get_sender_id();
+		data["service_id"] = updated_notification.get()->get_service_id();
+		data["status"] = updated_notification.get()->get_status();
+		data["created_at"] = updated_notification.get()->get_created_at();
+		data["updated_at"] = updated_notification.get()->get_updated_at();
+		res.write(data.dump());
+
+		res.end();
+	} catch (const std::exception& e) {
+		std::cerr << e.what() << '\n';
 	}
 }

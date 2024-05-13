@@ -177,15 +177,6 @@ std::unique_ptr<ServiceModel> get_service(pqxx::connection& db, const std::strin
 		else
 			return nullptr;
 	}
-	std::cout << "id: " << result[0]["id"].as<std::string>() << std::endl;
-	std::cout << "creator_id: " << result[0]["creator_id"].as<std::string>() << std::endl;
-	std::cout << "title: " << result[0]["title"].as<std::string>() << std::endl;
-	std::cout << "description: " << result[0]["description"].as<std::string>() << std::endl;
-	std::cout << "price: " << result[0]["price"].as<int>() << std::endl;
-	std::cout << "status: " << result[0]["status"].as<std::string>() << std::endl;
-	std::cout << "type: " << result[0]["type"].as<std::string>() << std::endl;
-	std::cout << "created_at: " << result[0]["created_at"].as<std::string>() << std::endl;
-	std::cout << "updated_at: " << result[0]["updated_at"].as<std::string>() << std::endl;
 	std::optional<std::string> buyer_id_field;
 	std::optional<std::string> image_url_field;
 	if (!result[0]["buyer_id"].is_null())

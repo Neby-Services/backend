@@ -53,7 +53,6 @@ class GetServiceTest : public testing::Test {
 		auto s_create = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{new_service.dump()}, cpr::Header{{"Content-Type", "application/json"}});
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
-		sleep(1);
 	}
 
 	void TearDown() override {

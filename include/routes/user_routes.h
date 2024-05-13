@@ -6,4 +6,4 @@
 #include <utils/common.h>
 #include <pqxx/pqxx>
 
-void initialize_user_routes(NebyApp& app, pqxx::connection& db);
+void initialize_user_routes(NebyApp& app);
