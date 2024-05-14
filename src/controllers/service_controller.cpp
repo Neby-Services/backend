@@ -18,6 +18,16 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 
 		std::cout << "id creator -> " << creator_id << std::endl;
 
+		if (price < 0) {
+			handle_error(res, "invalid price", 400);
+			return;
+		}
+
+		if ((type == ServiceType::REQUESTED) && (price > user.get()->get_balance())) {
+			handle_error(res, "not enough money to pay for service", 400); 
+			return;
+		}
+
 		std::unique_ptr<ServiceModel> service = ServiceModel::create_service(db, creator_id, title, description, price, type, std::nullopt);
 
 		if (!service) {
@@ -340,22 +350,27 @@ void ServiceController::update_service(pqxx::connection &db, const crow::request
 
 		if ((service_community == admin_community && request["isAdmin"].b() == true) || service_creator_id == request["id"].s()) {
 			// comprobacions
-			crow::json::rvalue update = crow::json::load(req.body);
+			std::string creator_id = request["id"].s();
+			std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, creator_id);
 			std::string temp_tittle = "", temp_description = "";
 			int temp_price = -1;
 
-			if (update.has("tittle")) {
-				temp_tittle = update["tittle"].s();
+			if (request.has("tittle")) {
+				temp_tittle = request["tittle"].s();
 			}
 
-			if (update.has("description")) {
-				temp_description = update["description"].s();
+			if (request.has("description")) {
+				temp_description = request["description"].s();
 			}
 
-			if (update.has("price")) {
-				temp_price = update["price"].i();
+			if (request.has("price")) {
+				temp_price = request["price"].i();
 				if (temp_price < 0) {
 					handle_error(res, "invalid price", 400);
+					return;
+				}
+				if (request["type"] == ServiceType::REQUESTED && temp_price < user->get_balance()) {
+					handle_error(res, "not enough money to pay for service", 400);
 					return;
 				}
 			}
