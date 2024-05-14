@@ -12,7 +12,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		std::string type = body["type"].s();
 		std::string community_id;
 
-		std::string hash = BCrypt::generateHash(password);
+		std::string hash = BCrypt::generateHash(password); 
 
 		if (UserModel::exists_username(db, username)) {
 			handle_error(res, "username already in use", 400);
