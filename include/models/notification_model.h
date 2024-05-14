@@ -33,4 +33,6 @@ class NotificationModel {
 	static bool refused_notifications(pqxx::connection& db, const std::string& service_id, const std::string& notification_id);
 
 	static std::unique_ptr<NotificationModel> get_notification_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
+
+	static std::vector<std::unique_ptr<NotificationModel>> get_notifications_self(pqxx::connection& db, const std::string& creator_id, const std::string& status = "");
 };

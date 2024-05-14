@@ -119,20 +119,17 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 				if (notificationCreator->get_balance() < service->get_price()) {
 					handle_error(res, "notification sender does not have enough coins to pay for the service", 400);
 					return;
-				}
-				else {
+				} else {
 					int new_sender_balance = notificationCreator->get_balance() - service->get_price();
 					int new_creator_balance = serviceCreator->get_balance() + service->get_price();
 					UserModel::update_user_admin(db, notificationCreator->get_id(), notificationCreator->get_username(), new_sender_balance);
 					UserModel::update_user_admin(db, serviceCreator->get_id(), serviceCreator->get_username(), new_creator_balance);
 				}
-			}
-			else {
+			} else {
 				if (serviceCreator->get_balance() < service->get_price()) {
 					handle_error(res, "you don't have the coins to pay for this request", 400);
 					return;
-				}
-				else {
+				} else {
 					int new_sender_balance = notificationCreator->get_balance() + service->get_price();
 					int new_creator_balance = serviceCreator->get_balance() - service->get_price();
 					UserModel::update_user_admin(db, notificationCreator->get_id(), notificationCreator->get_username(), new_sender_balance);
@@ -164,5 +161,49 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 		res.end();
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << '\n';
+	}
+}
+
+void NotificationController::get_notifications_self(pqxx::connection& db, const crow::request& req, crow::response& res) {
+	try {
+		crow::json::rvalue get = crow::json::load(req.body);
+		std::string user_id = get["id"].s();
+
+		std::vector<std::unique_ptr<NotificationModel>> all_notifications;
+
+		auto status = req.url_params.get("status");
+
+		if (!status) {
+			all_notifications = NotificationModel::get_notifications_self(db, user_id);
+
+		} else if (status && (std::string(status) == ServiceStatus::CLOSED || std::string(status) == ServiceStatus::OPEN)) {
+			all_notifications = NotificationModel::get_notifications_self(db, user_id, status);
+		} else {
+			handle_error(res, "status not valid value", 400);
+			return;
+		}
+
+		crow::json::wvalue::list notifications;
+		for (unsigned int i = 0; i < all_notifications.size(); ++i) {
+			crow::json::wvalue notification;
+
+			notification["id"] = all_notifications[i]->get_id();
+			notification["sender_id"] = all_notifications[i]->get_sender_id();
+			notification["service_id"] = all_notifications[i]->get_service_id();
+			notification["status"] = all_notifications[i]->get_status();
+			notification["created_at"] = all_notifications[i]->get_created_at();
+			notification["updated_at"] = all_notifications[i]->get_updated_at();
+
+			notifications.push_back(notification);
+		}
+
+		crow::json::wvalue data{{"self_notifications", notifications}};
+
+		res.write(data.dump());
+		res.code = 200;
+		res.end();
+	} catch (const std::exception& e) {
+		std::cerr << "Error getting user notifications: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
 	}
 }

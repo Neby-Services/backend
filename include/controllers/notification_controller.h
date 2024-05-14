@@ -15,4 +15,5 @@ class NotificationController {
 	public:
 	static void create_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id);
 	static void handle_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& notification_id);
+	static void get_notifications_self(pqxx::connection& db, const crow::request& req, crow::response& res);
 };

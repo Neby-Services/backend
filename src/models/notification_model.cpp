@@ -135,3 +135,46 @@ std::unique_ptr<NotificationModel> get_notification(pqxx::connection& db, const 
 std::unique_ptr<NotificationModel> NotificationModel::get_notification_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 	return get_notification(db, "id", id, throw_when_null);
 }
+
+std::vector<std::unique_ptr<NotificationModel>> NotificationModel::get_notifications_self(pqxx::connection& db, const std::string& creator_id, const std::string& status) {
+	std::vector<std::unique_ptr<NotificationModel>> all_notifications;
+
+	pqxx::work txn(db);
+
+	std::string query =
+		"SELECT n.id, "
+		"n.sender_id, "
+		"n.service_id, "
+		"n.status, "
+		"n.created_at, "
+		"n.updated_at "
+		"FROM notifications AS n "
+		"WHERE n.creator_id = $1";
+
+	// Agregar filtro de status si se proporciona
+	if (!status.empty()) {
+		query += " AND n.status = $2";
+	}
+
+	pqxx::result result;
+	if (!status.empty()) {
+		result = txn.exec_params(query, creator_id, status);
+	} else {
+		result = txn.exec_params(query, creator_id);
+	}
+
+	txn.commit();
+
+	for (const auto& row : result) {
+		// Crear instancia de NotificationModel para cada fila en el resultado
+		all_notifications.push_back(std::make_unique<NotificationModel>(
+			row["id"].as<std::string>(),
+			row["sender_id"].as<std::string>(),
+			row["service_id"].as<std::string>(),
+			row["status"].as<std::string>(),
+			row["created_at"].as<std::string>(),
+			row["updated_at"].as<std::string>()));
+	}
+
+	return all_notifications;
+}
