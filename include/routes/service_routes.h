@@ -7,4 +7,5 @@
 #include <utils/common.h>
 #include <pqxx/pqxx>
 
+#include <middlewares/index_middlewares.h>
 void initialize_service_routes(NebyApp& app);

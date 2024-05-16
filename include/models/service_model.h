@@ -49,6 +49,8 @@ class ServiceModel {
 
 	static std::vector<std::unique_ptr<ServiceModel>> get_services_self(pqxx::connection& db, const std::string& creator_id, const std::string& status = "");
 
+	static std::vector<std::unique_ptr<ServiceModel>> get_services_self_by_type(pqxx::connection& db, const std::string& creator_id, const std::string& type = "");
+
 	static std::unique_ptr<ServiceModel> delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null = false);
 
 	static bool update_service_by_id(pqxx::connection& db, const std::string id, const std::string tittle, const std::string description, const int price);

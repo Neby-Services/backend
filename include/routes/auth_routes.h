@@ -1,5 +1,6 @@
 #pragma once
 
+#include <middlewares/index_middlewares.h>
 #include <controllers/auth_controller.h>
 #include <crow.h>
 #include <middlewares/verify_jwt.h>
