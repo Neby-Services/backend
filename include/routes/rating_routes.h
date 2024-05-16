@@ -1,3 +1,5 @@
+#pragma once
+
 #include <controllers/rating_controller.h>
 #include <crow.h>
 #include <db/connection_pool.h>
