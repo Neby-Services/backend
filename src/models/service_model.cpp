@@ -483,3 +483,68 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 
 	return all_services;
 }
+
+bool ServiceModel::add_buyer(pqxx::connection& db, const std::string& service_id, const std::string& buyer_id) {
+	try {
+		pqxx::work txn(db);
+		pqxx::result result = txn.exec_params("UPDATE services SET buyer_id = $1 WHERE id = $2", buyer_id, service_id);
+		txn.commit();
+		return true;
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to update service: " << e.what() << std::endl;
+		return false;
+	}
+}
+
+std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id) {
+	try {
+		std::vector<std::unique_ptr<ServiceModel>> all_services;
+
+		pqxx::work txn(db);
+
+		std::string query = R"(
+            SELECT *
+			FROM services
+			WHERE buyer_id IS NOT NULL 
+			AND creator_id = $1;
+        )";
+
+		pqxx::result result = txn.exec_params(query, creator_id);
+
+		txn.commit();
+
+		for (const auto& row : result) {
+			std::optional<std::string> buyer_id_field;
+			std::optional<std::string> image_url_field;
+			if (!row["buyer_id"].is_null())
+				buyer_id_field = row["buyer_id"].as<std::string>();
+			else
+				buyer_id_field = std::nullopt;
+			if (!row["image_url"].is_null())
+				image_url_field = row["image_url"].as<std::string>();
+			else
+				image_url_field = std::nullopt;
+
+			// Crear instancia de ServiceModel con UserModel c omo argumento adicional
+			all_services.push_back(std::make_unique<ServiceModel>(
+				row["id"].as<std::string>(),
+				row["creator_id"].as<std::string>(),
+				buyer_id_field,
+				row["title"].as<std::string>(),
+				row["description"].as<std::string>(),
+				row["price"].as<int>(),
+				row["status"].as<std::string>(),
+				row["type"].as<std::string>(),
+				image_url_field,
+				std::nullopt,
+				std::nullopt,
+				row["created_at"].as<std::string>(),
+				row["updated_at"].as<std::string>()));
+		}
+
+		return all_services;
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to get services sold: " << e.what() << '\n';
+		return {};
+	}
+}

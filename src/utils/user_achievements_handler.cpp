@@ -31,7 +31,7 @@ void UserAchievementsHandler::handler(const std::vector<std::string>& tags, crow
 				} else if (tag == AchievementsTitles::ACHIEVEMENT_FOUR) {
 					handle_achievement_four(primary_user_id, user_achievement_id);
 				} else if (tag == AchievementsTitles::ACHIEVEMENT_FIVE) {
-					handle_achievement_five(primary_user_id, user_achievement_id);
+					handle_achievement_five(secondary_user_id, user_achievement_id);
 				}
 				break;
 			}
@@ -40,13 +40,11 @@ void UserAchievementsHandler::handler(const std::vector<std::string>& tags, crow
 }
 
 void UserAchievementsHandler::handle_achievement_one(const std::string& user_id, const std::string& user_achievement_id) {
-	//* return de count of service creates type offered
 	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 10);
 	auto conn = pool.getConnection();
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id, ServiceType::OFFERED);
 	if (services.size() >= 5) {
-		std::cout << "Logro completado: servicios offered = " << services.size() << std::endl;
 		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
 	}
 	pool.releaseConnection(conn);
@@ -58,7 +56,6 @@ void UserAchievementsHandler::handle_achievement_two(const std::string& user_id,
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id, ServiceType::REQUESTED);
 	if (services.size() >= 5) {
-		std::cout << "Logro completado: servicios requested = " << services.size() << std::endl;
 		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
 	}
 	pool.releaseConnection(conn);
@@ -70,19 +67,30 @@ void UserAchievementsHandler::handle_achievement_three(const std::string& user_i
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id);
 	if (services.size() >= 1) {
-		std::cout << "Logro completado : servicios  = " << services.size() << std::endl;
 		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
 	}
 	pool.releaseConnection(conn);
 }
 
 void UserAchievementsHandler::handle_achievement_four(const std::string& user_id, const std::string& user_achievement_id) {
-	std::cout << "llega unoo" << user_id << std::endl;
-	//* accept 5 services
-	//* look when accepts a notification
-	//* 
+	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 10);
+	auto conn = pool.getConnection();
+
+	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_sold_by_creator_id(*conn.get(), user_id);
+	if (services.size() >= 5) {
+		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+	}
+	pool.releaseConnection(conn);
 }
 
 void UserAchievementsHandler::handle_achievement_five(const std::string& user_id, const std::string& user_achievement_id) {
-	std::cout << "llega unoo" << user_id << std::endl;
+	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 10);
+	auto conn = pool.getConnection();
+
+	std::vector<std::unique_ptr<NotificationModel>> notifications = NotificationModel::get_notifications_accepted_self(*conn.get(), user_id);
+	if (notifications.size() >= 5) {
+		std::cout << "Logro completado : servicios  = " << notifications.size() << std::endl;
+		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+	}
+	pool.releaseConnection(conn);
 }

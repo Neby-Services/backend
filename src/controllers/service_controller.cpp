@@ -1,6 +1,6 @@
 #include <controllers/service_controller.h>
 
-void ServiceController::create_service(pqxx::connection &db, const crow::request &req, crow::response &res) {
+void ServiceController::create_service(pqxx::connection &db,  crow::request &req, crow::response &res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 
@@ -24,7 +24,7 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 		}
 
 		if ((type == ServiceType::REQUESTED) && (price > user.get()->get_balance())) {
-			handle_error(res, "not enough money to pay for service", 400); 
+			handle_error(res, "not enough money to pay for service", 400);
 			return;
 		}
 
@@ -50,6 +50,13 @@ void ServiceController::create_service(pqxx::connection &db, const crow::request
 			data["buyer_id"] = service.get()->get_buyer_id().value();
 		if (service.get()->get_image_url().has_value())
 			data["image_url"] = service.get()->get_image_url().value();
+
+		//* Achievements to handle
+		std::vector<std::string> vec = {
+			AchievementsTitles::ACHIEVEMENT_ONE, AchievementsTitles::ACHIEVEMENT_TWO, AchievementsTitles::ACHIEVEMENT_THREE};
+
+		set_new_body_prop(req, "tags", vec);
+		set_new_body_prop(req, "primary_user_id", creator_id);
 
 		res.code = 201;
 		res.write(data.dump());

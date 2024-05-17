@@ -1,6 +1,7 @@
 #include <db/connection_pool.h>
 #include <models/service_model.h>
 #include <models/user_achievement_model.h>
+#include <models/notification_model.h>
 #include <utils/common.h>
 #include <memory>
 #include <pqxx/pqxx>

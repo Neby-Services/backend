@@ -70,7 +70,7 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 	}
 }
 
-void NotificationController::handle_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& notification_id) {
+void NotificationController::handle_notification(pqxx::connection& db, crow::request& req, crow::response& res, const std::string& notification_id) {
 	try {
 		//? extarct query string param -> action = accepeted | refused
 		auto action = req.url_params.get("action");
@@ -133,10 +133,17 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 					int new_sender_balance = notificationCreator.get()->get_balance() + service.get()->get_price();
 					int new_creator_balance = serviceCreator.get()->get_balance() - service.get()->get_price();
 					UserModel::update_user_admin(db, notificationCreator.get()->get_id(), notificationCreator.get()->get_username(), new_sender_balance);
-					UserModel::update_user_admin(db, serviceCreator.get()->get_id(), serviceCreator.get()->get_username(), new_creator_balance); 
+					UserModel::update_user_admin(db, serviceCreator.get()->get_id(), serviceCreator.get()->get_username(), new_creator_balance);
 				}
 			}
 			updated_notification = NotificationModel::handle_notification_status(db, NotificationStatus::ACCEPTED, notification_id, true);
+
+			std::string service_id = updated_notification.get()->get_service_id();
+			bool success_add_buyer_service = ServiceModel::add_buyer(db, service_id, updated_notification.get()->get_sender_id());
+			if (!success_add_buyer_service) {
+				handle_error(res, "error in add buyer to service", 400);
+				return;
+			}
 
 			bool succes_refused = NotificationModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);
 
@@ -144,6 +151,13 @@ void NotificationController::handle_notification(pqxx::connection& db, const cro
 				handle_error(res, "error in refused other notifications", 400);
 				return;
 			}
+			//* Achievements to handle
+			std::vector<std::string> vec = {
+				AchievementsTitles::ACHIEVEMENT_FOUR, AchievementsTitles::ACHIEVEMENT_FIVE};
+
+			set_new_body_prop(req, "tags", vec);
+			set_new_body_prop(req, "primary_user_id", request_id);
+			set_new_body_prop(req, "secondary_user_id", updated_notification.get()->get_sender_id());
 		}
 
 		//? if action == refused -> refuse the notification
