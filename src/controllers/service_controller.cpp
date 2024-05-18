@@ -4,7 +4,7 @@ void ServiceController::create_service(pqxx::connection &db,  crow::request &req
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 
-		const std::vector<std::string> required_fields = {"title", "description", "price", "id", "type"};
+		const std::vector<std::string> required_fields = { "title", "description", "price", "id", "type" };
 
 		if (!validate_required_body_fields(body, required_fields, res)) return;
 
@@ -36,7 +36,7 @@ void ServiceController::create_service(pqxx::connection &db,  crow::request &req
 		}
 
 		crow::json::wvalue data(
-			{{"id", service.get()->get_id()},
+			{ {"id", service.get()->get_id()},
 			 {"creator_id", service.get()->get_creator_id()},
 			 {"title", service.get()->get_title()},
 			 {"description", service.get()->get_description()},
@@ -44,7 +44,7 @@ void ServiceController::create_service(pqxx::connection &db,  crow::request &req
 			 {"status", service.get()->get_status()},
 			 {"type", service.get()->get_type()},
 			 {"created_at", service.get()->get_created_at()},
-			 {"updated_at", service.get()->get_updated_at()}});
+			 {"updated_at", service.get()->get_updated_at()} });
 
 		if (service.get()->get_buyer_id().has_value())
 			data["buyer_id"] = service.get()->get_buyer_id().value();
@@ -61,13 +61,14 @@ void ServiceController::create_service(pqxx::connection &db,  crow::request &req
 		res.code = 201;
 		res.write(data.dump());
 		res.end();
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error creating service: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
 	}
 }
 
-void ServiceController::get_service_by_id(pqxx::connection &db, const crow::request &req, crow::response &res, const std::string &service_id) {
+void ServiceController::get_service_by_id(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id) {
 	try {
 		if (service_id.empty()) {
 			handle_error(res, "id must be provided", 400);
@@ -75,7 +76,7 @@ void ServiceController::get_service_by_id(pqxx::connection &db, const crow::requ
 		}
 
 		if (!isValidUUID(service_id)) {
-			handle_error(res, "id is invalid", 400);
+			handle_error(res, "service id is invalid", 400);
 			return;
 		}
 		// Consulta el servicio por su ID
@@ -130,19 +131,20 @@ void ServiceController::get_service_by_id(pqxx::connection &db, const crow::requ
 			service_json["buyer"] = crow::json::wvalue(buyer);
 		}
 
-		crow::json::wvalue data{{"service", service_json}};
+		crow::json::wvalue data{ {"service", service_json} };
 
 		res.write(data.dump());
 		res.code = 200;
 		res.end();
 
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error getting service: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
 	}
 }
 
-void ServiceController::get_services(pqxx::connection &db, const crow::request &req, crow::response &res) {
+void ServiceController::get_services(pqxx::connection& db, const crow::request& req, crow::response& res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 
@@ -153,9 +155,11 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 		if (!status) {
 			all_services = ServiceModel::get_services(db, user.get()->get_community_id());
 
-		} else if (status && (std::string(status) == ServiceStatus::CLOSED || std::string(status) == ServiceStatus::OPEN)) {
+		}
+		else if (status && (std::string(status) == ServiceStatus::CLOSED || std::string(status) == ServiceStatus::OPEN)) {
 			all_services = ServiceModel::get_services(db, user.get()->get_community_id(), status);
-		} else {
+		}
+		else {
 			handle_error(res, "status not valid value", 400);
 			return;
 		}
@@ -207,18 +211,19 @@ void ServiceController::get_services(pqxx::connection &db, const crow::request &
 			services.push_back(service);
 		}
 
-		crow::json::wvalue data{{"services", services}};
+		crow::json::wvalue data{ {"services", services} };
 
 		res.write(data.dump());
 		res.code = 200;
 		res.end();
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error getting services: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
 	}
 }
 
-void ServiceController::get_services_self(pqxx::connection &db, const crow::request &req, crow::response &res) {
+void ServiceController::get_services_self(pqxx::connection& db, const crow::request& req, crow::response& res) {
 	try {
 		crow::json::rvalue get = crow::json::load(req.body);
 		std::string user_id = get["id"].s();
@@ -230,9 +235,11 @@ void ServiceController::get_services_self(pqxx::connection &db, const crow::requ
 		if (!status) {
 			all_services = ServiceModel::get_services_self(db, user_id);
 
-		} else if (status && (std::string(status) == ServiceStatus::CLOSED || std::string(status) == ServiceStatus::OPEN)) {
+		}
+		else if (status && (std::string(status) == ServiceStatus::CLOSED || std::string(status) == ServiceStatus::OPEN)) {
 			all_services = ServiceModel::get_services_self(db, user_id, status);
-		} else {
+		}
+		else {
 			handle_error(res, "status not valid value", 400);
 			return;
 		}
@@ -284,18 +291,19 @@ void ServiceController::get_services_self(pqxx::connection &db, const crow::requ
 			services.push_back(service);
 		}
 
-		crow::json::wvalue data{{"self_services", services}};
+		crow::json::wvalue data{ {"self_services", services} };
 
 		res.write(data.dump());
 		res.code = 200;
 		res.end();
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error getting user services: " << e.what() << std::endl;
 		handle_error(res, "internal server error", 500);
 	}
 }
 
-void ServiceController::delete_service(pqxx::connection &db, const crow::request &req, crow::response &res, std::string service_id) {
+void ServiceController::delete_service(pqxx::connection& db, const crow::request& req, crow::response& res, std::string service_id) {
 	try {
 		crow::json::rvalue request = crow::json::load(req.body);
 
@@ -317,26 +325,29 @@ void ServiceController::delete_service(pqxx::connection &db, const crow::request
 		if ((service_community == admin_community && request["isAdmin"].b() == true) || service_creator_id == request["id"].s()) {
 			std::unique_ptr<ServiceModel> deleted_service = ServiceModel::delete_service_by_id(db, service_id);
 			if (deleted_service) {
-				crow::json::wvalue message({{"message", "service deleted succesfully"}});
+				crow::json::wvalue message({ {"message", "service deleted succesfully"} });
 				res.write(message.dump());
 				res.code = 200;
 				res.end();
-			} else {
+			}
+			else {
 				handle_error(res, "could not delete service", 400);
 				return;
 			}
-		} else {
+		}
+		else {
 			handle_error(res, "user without admin privileges or not creator of service", 403);
 			return;
 		}
 
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error deleting service: " << e.what() << std::endl;
 		handle_error(res, "Error deleting service", 500);
 	}
 }
 
-void ServiceController::update_service(pqxx::connection &db, const crow::request &req, crow::response &res, std::string service_id) {
+void ServiceController::update_service(pqxx::connection& db, const crow::request& req, crow::response& res, std::string service_id) {
 	try {
 		crow::json::rvalue request = crow::json::load(req.body);
 
@@ -346,6 +357,7 @@ void ServiceController::update_service(pqxx::connection &db, const crow::request
 			handle_error(res, "service not found", 404);
 			return;
 		}
+
 
 		std::string service_creator_id = service.get()->get_creator_id();
 
@@ -359,11 +371,12 @@ void ServiceController::update_service(pqxx::connection &db, const crow::request
 			// comprobacions
 			std::string creator_id = request["id"].s();
 			std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, creator_id);
+
 			std::string temp_tittle = "", temp_description = "";
 			int temp_price = -1;
 
-			if (request.has("tittle")) {
-				temp_tittle = request["tittle"].s();
+			if (request.has("title")) {
+				temp_tittle = request["title"].s();
 			}
 
 			if (request.has("description")) {
@@ -376,7 +389,7 @@ void ServiceController::update_service(pqxx::connection &db, const crow::request
 					handle_error(res, "invalid price", 400);
 					return;
 				}
-				if (request["type"] == ServiceType::REQUESTED && temp_price < user->get_balance()) {
+				if (service.get()->get_type() == ServiceType::REQUESTED && temp_price < user->get_balance()) {
 					handle_error(res, "not enough money to pay for service", 400);
 					return;
 				}
@@ -384,21 +397,24 @@ void ServiceController::update_service(pqxx::connection &db, const crow::request
 
 			bool updated_service = ServiceModel::update_service_by_id(db, service_id, temp_tittle, temp_description, temp_price);
 			if (updated_service) {
-				crow::json::wvalue message({{"message", "service deleted succesfully"}});
+				crow::json::wvalue message({ {"message", "service updated succesfully"} });
 				res.write(message.dump());
 				res.code = 200;
 				res.end();
-			} else {
+			}
+			else {
 				handle_error(res, "could not delete service", 400);
 				return;
 			}
-		} else {
+		}
+		else { 
 			handle_error(res, "user without admin privileges or not creator of service", 403);
 			return;
 		}
 
-	} catch (const std::exception &e) {
-		std::cerr << "Error deleting service: " << e.what() << std::endl;
-		handle_error(res, "Error deleting service", 500);
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Error updating service: " << e.what() << std::endl;
+		handle_error(res, "Error updating service", 500);
 	}
 }

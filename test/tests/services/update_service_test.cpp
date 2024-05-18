@@ -17,7 +17,7 @@ status_code = 401
 TEST(UpdateServiceNotAuth, update_service_not_auth) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/uuidexample";
 
-	auto response = cpr::Put(cpr::Url{url});
+	auto response = cpr::Put(cpr::Url{ url });
 	EXPECT_EQ(response.status_code, 404);
 	auto json = nlohmann::json::parse(response.text);
 	EXPECT_TRUE(json.contains("error"));
@@ -32,7 +32,7 @@ res.body = 'not enough priviligies';
 
 */
 class UpdateServiceNeitherAuth : public testing::Test {
-	protected:
+protected:
 	std::string _service_id_;
 	std::string _neighbor_token_;
 	std::string _admin_token_;
@@ -48,9 +48,9 @@ class UpdateServiceNeitherAuth : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -61,7 +61,8 @@ class UpdateServiceNeitherAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 
@@ -76,9 +77,9 @@ class UpdateServiceNeitherAuth : public testing::Test {
 			{"username", "examplee"},
 			{"password", "P@ssw0rd!"},
 			{"type", "neighbor"},
-			{"community_code", code}};
+			{"community_code", code} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(response.text);
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -89,7 +90,8 @@ class UpdateServiceNeitherAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_neighbor_token_ = token_value;
-		} else {
+		}
+		else {
 			_neighbor_token_ = "";
 		}
 		// auto json = nlohmann::json::parse(response.text);
@@ -103,8 +105,8 @@ class UpdateServiceNeitherAuth : public testing::Test {
 			{"title", "nodeberiaexistir"},
 			{"description", "some description 555555555"},
 			{"price", 40},
-			{"type", "offered"}};
-		auto s_create = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{new_service.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+			{"type", "offered"} };
+		auto s_create = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
 
@@ -119,10 +121,12 @@ class UpdateServiceNeitherAuth : public testing::Test {
 				txn.commit();
 
 				_community_id_ = result[0][0].as<std::string>();
-			} catch (const std::exception& e) {
+			}
+			catch (const std::exception& e) {
 				std::cerr << "Error creating user: " << e.what() << std::endl;
 			}
-		} else {
+		}
+		else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
 
@@ -138,7 +142,7 @@ class UpdateServiceNeitherAuth : public testing::Test {
 
 TEST_F(UpdateServiceNeitherAuth, update_service_Neither) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
-	auto response = cpr::Put(cpr::Url{url_service}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 403) << "Expected 403 status code for user without admin privileges or not creator of service: ";
@@ -147,13 +151,13 @@ TEST_F(UpdateServiceNeitherAuth, update_service_Neither) {
 }
 
 /*
-TEST if user is auth, exists 2 community (A y B), the user is admin of A, and services deleted is B community
+TEST if user is auth, exists 2 community (A y B), the user is admin of A, and services updated is B community
 so
 status = 403
 res.body = user without admin privileges or not creator of service
 */
 class UpdateServiceAdminBAuth : public testing::Test {
-	protected:
+protected:
 	std::string _service_id_;
 	std::string _admin1_token_;
 	std::string _admin_token_;
@@ -168,9 +172,9 @@ class UpdateServiceAdminBAuth : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -181,7 +185,8 @@ class UpdateServiceAdminBAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 
@@ -196,9 +201,9 @@ class UpdateServiceAdminBAuth : public testing::Test {
 			{"username", "examplee"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_namee"}};
+			{"community_name", "example_community_namee"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(response.text);
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -209,7 +214,8 @@ class UpdateServiceAdminBAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin1_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin1_token_ = "";
 		}
 		// auto json = nlohmann::json::parse(response.text);
@@ -223,8 +229,8 @@ class UpdateServiceAdminBAuth : public testing::Test {
 			{"title", "nodeberiaexistir"},
 			{"description", "some description 555555555"},
 			{"price", 40},
-			{"type", "offered"}};
-		auto s_create = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{new_service.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+			{"type", "offered"} };
+		auto s_create = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
 
@@ -240,7 +246,7 @@ class UpdateServiceAdminBAuth : public testing::Test {
 
 TEST_F(UpdateServiceAdminBAuth, update_service_AdminB) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
-	auto response = cpr::Put(cpr::Url{url_service}, cpr::Cookies{{"token", _admin1_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin1_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 403) << "Expected 403 status code for user without admin privileges or not creator of service: ";
@@ -255,7 +261,7 @@ status_code = 404
 res.body = 'service not found'
 */
 class UpdateServiceNotFoundAuth : public testing::Test {
-	protected:
+protected:
 	std::string _admin_token_;
 
 	void register_admin() {
@@ -266,9 +272,9 @@ class UpdateServiceNotFoundAuth : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -279,7 +285,8 @@ class UpdateServiceNotFoundAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 	}
@@ -298,20 +305,20 @@ class UpdateServiceNotFoundAuth : public testing::Test {
 TEST_F(UpdateServiceNotFoundAuth, update_service_not_found) {
 	std::string lol = "123e4567-e89b-12d3-a456-426655440000";
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + lol;
-	auto response = cpr::Put(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 404) << "Expected 404 status code for service not found: ";
 	EXPECT_TRUE(json.contains("error"));
 	EXPECT_EQ(json["error"], "service not found");
-}
+} 
 
 /*
 TEST if user is auth, not admin, but the user is creator of service
-status_code = 204
+status_code = 200
 */
 class UpdateServiceCreatorAuth : public testing::Test {
-	protected:
+protected:
 	std::string _service_id_;
 	std::string _neighbor_token_;
 	std::string _admin_token_;
@@ -327,9 +334,9 @@ class UpdateServiceCreatorAuth : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -340,7 +347,8 @@ class UpdateServiceCreatorAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 
@@ -355,9 +363,9 @@ class UpdateServiceCreatorAuth : public testing::Test {
 			{"username", "examplee"},
 			{"password", "P@ssw0rd!"},
 			{"type", "neighbor"},
-			{"community_code", code}};
+			{"community_code", code} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(response.text);
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -368,7 +376,8 @@ class UpdateServiceCreatorAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_neighbor_token_ = token_value;
-		} else {
+		}
+		else {
 			_neighbor_token_ = "";
 		}
 		// auto json = nlohmann::json::parse(response.text);
@@ -389,10 +398,12 @@ class UpdateServiceCreatorAuth : public testing::Test {
 				txn.commit();
 
 				_community_id_ = result[0][0].as<std::string>();
-			} catch (const std::exception& e) {
+			}
+			catch (const std::exception& e) {
 				std::cerr << "Error creating user: " << e.what() << std::endl;
 			}
-		} else {
+		}
+		else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
 
@@ -402,8 +413,8 @@ class UpdateServiceCreatorAuth : public testing::Test {
 			{"title", "sideberiaexistir"},
 			{"description", "some description 555555555"},
 			{"price", 40},
-			{"type", "offered"}};
-		auto s_create = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Body{new_service.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+			{"type", "offered"} };
+		auto s_create = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
 	}
@@ -418,13 +429,14 @@ class UpdateServiceCreatorAuth : public testing::Test {
 TEST_F(UpdateServiceCreatorAuth, update_service_creator) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 	nlohmann::json update = {
-		{"price", 1},
-		{"tittle", "example"}};
-	auto response = cpr::Put(cpr::Url{url_service}, cpr::Body{update.dump()}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+		{"price", 1}, 
+		{"tittle", "example"} }; 
+	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Body{ update.dump() }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
+	std::cout << "Response creator service: " << response.text << std::endl;
 	auto json = nlohmann::json::parse(response.text);
-	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service deleted succesfully: ";
+	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service updated succesfully: ";
 	EXPECT_TRUE(json.contains("message"));
-	EXPECT_EQ(json["message"], "service deleted succesfully");
+	EXPECT_EQ(json["message"], "service updated succesfully");
 }
 
 /*
@@ -435,8 +447,8 @@ res.body = 'invalid price'
 TEST_F(UpdateServiceCreatorAuth, update_service_invalid_price) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 	nlohmann::json update = {
-		{"price", -11}};
-	auto response = cpr::Put(cpr::Url{url_service}, cpr::Body{update.dump()}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+		{"price", -11} };
+	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Body{ update.dump() }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 	EXPECT_EQ(response.status_code, 400) << "Expected 200 status code for invalid price: ";
 	EXPECT_TRUE(json.contains("error"));
@@ -449,7 +461,7 @@ status_code = 204
 res.body = ''
 */
 class UpdateServiceAdminAuth : public testing::Test {
-	protected:
+protected:
 	std::string _service_id_;
 	std::string _neighbor_token_;
 	std::string _admin_token_;
@@ -465,9 +477,9 @@ class UpdateServiceAdminAuth : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -478,7 +490,8 @@ class UpdateServiceAdminAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 
@@ -493,9 +506,9 @@ class UpdateServiceAdminAuth : public testing::Test {
 			{"username", "examplee"},
 			{"password", "P@ssw0rd!"},
 			{"type", "neighbor"},
-			{"community_code", code}};
+			{"community_code", code} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(response.text);
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -506,7 +519,8 @@ class UpdateServiceAdminAuth : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_neighbor_token_ = token_value;
-		} else {
+		}
+		else {
 			_neighbor_token_ = "";
 		}
 		// auto json = nlohmann::json::parse(response.text);
@@ -527,10 +541,12 @@ class UpdateServiceAdminAuth : public testing::Test {
 				txn.commit();
 
 				_community_id_ = result[0][0].as<std::string>();
-			} catch (const std::exception& e) {
+			}
+			catch (const std::exception& e) {
 				std::cerr << "Error creating user: " << e.what() << std::endl;
 			}
-		} else {
+		}
+		else {
 			std::cerr << "Error connecting to the database." << std::endl;
 		}
 
@@ -540,8 +556,8 @@ class UpdateServiceAdminAuth : public testing::Test {
 			{"title", "nodeberiaexistir"},
 			{"description", "some description 555555555"},
 			{"price", 40},
-			{"type", "offered"}};
-		auto s_create = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _neighbor_token_}}, cpr::Body{new_service.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+			{"type", "offered"} };
+		auto s_create = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 		auto json = nlohmann::json::parse(s_create.text);
 		_service_id_ = json["id"];
 	}
@@ -557,10 +573,10 @@ TEST_F(UpdateServiceAdminAuth, update_service_admin) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 	nlohmann::json update = {
 		{"price", 1},
-		{"tittle", "example"}};
-	auto response = cpr::Put(cpr::Url{url_service}, cpr::Body{update.dump()}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+		{"tittle", "example"} };
+	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Body{ update.dump() }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
-	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service deleted succesfully: ";
+	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service updated succesfully: ";
 	EXPECT_TRUE(json.contains("message"));
-	EXPECT_EQ(json["message"], "service deleted succesfully");
+	EXPECT_EQ(json["message"], "service updated succesfully");
 }

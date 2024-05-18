@@ -14,7 +14,6 @@ void initialize_auth_routes(NebyApp& app) {
 	CROW_ROUTE(app, "/api/auth/login")
 		.methods(crow::HTTPMethod::POST)([&pool](const crow::request& req, crow::response& res) {
 			auto conn = pool.getConnection();
-			std::cout << "me mamais los putisimos huevosss" << std::endl; 
 			AuthController::login_user(*conn.get(), req, res);
 			pool.releaseConnection(conn);
 		});
