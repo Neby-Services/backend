@@ -12,7 +12,7 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 		std::string type = body["type"].s();
 		std::string community_id;
 
-		std::string hash = BCrypt::generateHash(password); 
+		std::string hash = BCrypt::generateHash(password);
 
 		if (UserModel::exists_username(db, username)) {
 			handle_error(res, "username already in use", 400);
@@ -40,12 +40,9 @@ void AuthController::register_user(pqxx::connection &db, const crow::request &re
 			community_id = community.get()->get_id();
 		}
 
-		std::unique_ptr<UserModel> user = UserModel::create_user(db, community_id, username, email, hash, type, 0);
+		std::unique_ptr<UserModel> user = UserModel::create_user(db, community_id, username, email, hash, type, 50, true);
 
-		if (!user) {
-			handle_error(res, "internal server error", 500);
-			return;
-		}
+		std::vector<std::unique_ptr<UserAchievementModel>> user_achievements = UserAchievementModel::create_user_achievement_tables(db, achievements_titles, user.get()->get_id(), true); 
 
 		std::string jwtToken = create_token(user);
 		int expirationTimeSeconds = 3600;

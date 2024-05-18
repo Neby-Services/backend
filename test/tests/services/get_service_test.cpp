@@ -92,7 +92,7 @@ TEST_F(GetServiceTest, invalid_id) {
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_TRUE(json.contains("error"));
-	EXPECT_EQ(json["error"], "id is invalid");
+	EXPECT_EQ(json["error"], "service id is invalid");  
 }
 
 TEST_F(GetServiceTest, not_found_id) {
