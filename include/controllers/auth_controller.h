@@ -3,6 +3,7 @@
 #include <crow.h>
 #include <models/community_model.h>
 #include <models/user_model.h>
+#include <models/user_achievement_model.h>
 #include <utils/auth.h>
 #include <utils/common.h>
 #include <utils/user_validations.h>

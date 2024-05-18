@@ -20,3 +20,21 @@ const std::string ServiceStatus::OPEN = "open";
 
 const std::string ServiceType::OFFERED = "offered";
 const std::string ServiceType::REQUESTED = "requested";
+
+const std::string AchievementStatus::IN_PROGRESS = "in_progress";
+const std::string AchievementStatus::COMPLETED = "completed";
+const std::string AchievementStatus::CLAIMED = "claimed";
+
+const std::string AchievementsTitles::ACHIEVEMENT_ONE = "Service Showcase: Unveiling 5 Offerings to the World!";
+const std::string AchievementsTitles::ACHIEVEMENT_TWO = "Service Spectrum: Fulfilling 5 Requested Offerings!";
+const std::string AchievementsTitles::ACHIEVEMENT_THREE = "Neighborhood Pioneer: Initiate 1 Service Exchange";
+const std::string AchievementsTitles::ACHIEVEMENT_FOUR = "Neighbor Nexus: Welcome 5 Service Offers with Open Arms";
+const std::string AchievementsTitles::ACHIEVEMENT_FIVE = "Community Cohesion: Engage in 5 Vibrant Service Interactions";
+
+const std::vector<std::string> achievements_titles = {
+	AchievementsTitles::ACHIEVEMENT_ONE,
+	AchievementsTitles::ACHIEVEMENT_TWO,
+	AchievementsTitles::ACHIEVEMENT_THREE,
+	AchievementsTitles::ACHIEVEMENT_FOUR,
+	AchievementsTitles::ACHIEVEMENT_FIVE 
+	};

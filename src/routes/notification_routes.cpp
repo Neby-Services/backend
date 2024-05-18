@@ -13,7 +13,7 @@ void initialize_notifications_routes(NebyApp& app) {
 
 	CROW_ROUTE(app, "/api/notifications/<string>")
 		.methods(crow::HTTPMethod::PUT)
-		.CROW_MIDDLEWARES(app, VerifyJWT)([&pool](const crow::request& req, crow::response& res, const std::string& notification_id) {
+		.CROW_MIDDLEWARES(app, VerifyJWT, HandleAchievements)([&pool](crow::request& req, crow::response& res, const std::string& notification_id) {
 			auto conn = pool.getConnection();
 			NotificationController::handle_notification(*conn.get(), req, res, notification_id);
 

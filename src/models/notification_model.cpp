@@ -19,7 +19,7 @@ std::unique_ptr<NotificationModel> NotificationModel::create_notification(pqxx::
 
 		if (result.empty()) {
 			if (throw_when_null)
-				throw creation_exception("service could not be created");
+				throw creation_exception("notification could not be created");
 			return nullptr;
 		}
 
@@ -134,4 +134,37 @@ std::unique_ptr<NotificationModel> get_notification(pqxx::connection& db, const 
 
 std::unique_ptr<NotificationModel> NotificationModel::get_notification_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 	return get_notification(db, "id", id, throw_when_null);
+}
+
+std::vector<std::unique_ptr<NotificationModel>> NotificationModel::get_notifications_accepted_self(pqxx::connection& db, const std::string& sender_id) {
+	try {
+		std::vector<std::unique_ptr<NotificationModel>> notifications;
+		pqxx::work txn(db);
+
+		std::string sql = R"(
+            SELECT * 
+			FROM notifications
+			WHERE sender_id = $1
+			AND status = 'accepted'
+        )";
+
+		pqxx::result result = txn.exec_params(sql, sender_id);
+
+		txn.commit();
+		for (const auto& row : result) {
+			notifications.push_back(std::make_unique<NotificationModel>(
+				row["id"].as<std::string>(),
+				row["sender_id"].as<std::string>(),
+				row["service_id"].as<std::string>(),
+				row["status"].as<std::string>(),
+				row["created_at"].as<std::string>(),
+				row["updated_at"].as<std::string>()));
+		}
+
+		return notifications;
+
+	} catch (const std::exception& e) {
+		std::cerr << "Error al actualizar las notificaciones: " << e.what() << '\n';
+		return {};
+	}
 }
