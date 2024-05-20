@@ -1,6 +1,6 @@
 #include <controllers/service_controller.h>
 
-void ServiceController::create_service(pqxx::connection &db,  crow::request &req, crow::response &res) {
+void ServiceController::create_service(pqxx::connection& db, crow::request& req, crow::response& res) {
 	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 
@@ -53,7 +53,7 @@ void ServiceController::create_service(pqxx::connection &db,  crow::request &req
 
 		//* Achievements to handle
 		std::vector<std::string> vec = {
-			AchievementsTitles::ACHIEVEMENT_ONE, AchievementsTitles::ACHIEVEMENT_TWO, AchievementsTitles::ACHIEVEMENT_THREE};
+			AchievementsTitles::ACHIEVEMENT_ONE, AchievementsTitles::ACHIEVEMENT_TWO, AchievementsTitles::ACHIEVEMENT_THREE };
 
 		set_new_body_prop(req, "tags", vec);
 		set_new_body_prop(req, "primary_user_id", creator_id);
@@ -407,7 +407,7 @@ void ServiceController::update_service(pqxx::connection& db, const crow::request
 				return;
 			}
 		}
-		else { 
+		else {
 			handle_error(res, "user without admin privileges or not creator of service", 403);
 			return;
 		}
