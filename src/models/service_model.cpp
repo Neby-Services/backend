@@ -15,7 +15,7 @@ std::optional<UserModel> ServiceModel::get_creator() const { return _creator; };
 std::optional<UserModel> ServiceModel::get_buyer() const { return _buyer; };
 std::string ServiceModel::get_created_at() const { return _created_at; }
 std::string ServiceModel::get_updated_at() const { return _updated_at; }
-
+ 
 std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db, const std::string& creator_id, const std::string& title, const std::string& description, const int price, const std::string& type, const std::optional<std::string>& image_url, bool isThrow) {
 	pqxx::work txn(db);
 
@@ -130,7 +130,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 			row["creator_type"].as<std::string>(),
 			row["creator_balance"].as<int>(),
 			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>());
+			row["creator_updated_at"].as<std::string>(), std::nullopt);
 
 		// Crear instancia de UserModel para el comprador, si existe
 		UserModel buyer;
@@ -143,7 +143,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 				row["buyer_type"].as<std::string>(),
 				row["buyer_balance"].as<int>(),
 				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>());
+				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
 		// Crear instancia de ServiceModel con UserModel como argumento adicional
@@ -280,7 +280,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 			row["creator_type"].as<std::string>(),
 			row["creator_balance"].as<int>(),
 			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>());
+			row["creator_updated_at"].as<std::string>(), std::nullopt);
 
 		// Crear instancia de UserModel para el comprador, si existe
 		UserModel buyer;
@@ -293,7 +293,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 				row["buyer_type"].as<std::string>(),
 				row["buyer_balance"].as<int>(),
 				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>());
+				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
 		// Crear instancia de ServiceModel con UserModel como argumento adicional
@@ -448,7 +448,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 			row["creator_type"].as<std::string>(),
 			row["creator_balance"].as<int>(),
 			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>());
+			row["creator_updated_at"].as<std::string>(), std::nullopt);
 
 		// Crear instancia de UserModel para el comprador, si existe
 		UserModel buyer;
@@ -461,7 +461,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 				row["buyer_type"].as<std::string>(),
 				row["buyer_balance"].as<int>(),
 				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>());
+				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
 		// Crear instancia de ServiceModel con UserModel como argumento adicional
