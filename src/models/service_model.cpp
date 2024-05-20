@@ -103,7 +103,8 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 	pqxx::result result;
 	if (!status.empty()) {
 		result = txn.exec_params(query, community_id, status);
-	} else {
+	}
+	else {
 		result = txn.exec_params(query, community_id);
 	}
 
@@ -121,7 +122,6 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 		else
 			image_url_field = std::nullopt;
 
-		// Crear instancia de UserModel para el creador
 		UserModel creator(
 			row["creator_id"].as<std::string>(),
 			row["creator_community_id"].as<std::string>(),
@@ -130,10 +130,9 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 			row["creator_type"].as<std::string>(),
 			row["creator_balance"].as<int>(),
 			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>());
+			row["creator_updated_at"].as<std::string>(), std::nullopt);
 
-		// Crear instancia de UserModel para el comprador, si existe
-		UserModel buyer;
+		std::optional<UserModel> buyer = std::nullopt;
 		if (buyer_id_field) {
 			buyer = UserModel(
 				row["buyer_id"].as<std::string>(),
@@ -143,10 +142,10 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 				row["buyer_type"].as<std::string>(),
 				row["buyer_balance"].as<int>(),
 				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>());
+				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
-		// Crear instancia de ServiceModel con UserModel como argumento adicional
+
 		all_services.push_back(std::make_unique<ServiceModel>(
 			row["service_id"].as<std::string>(),
 			row["creator_id"].as<std::string>(),
@@ -245,7 +244,6 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
 		"WHERE s.creator_id = $1";
 
-	// Agregar filtro de status si se proporciona
 	if (!status.empty()) {
 		query += " AND s.status = $2";
 	}
@@ -253,7 +251,8 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 	pqxx::result result;
 	if (!status.empty()) {
 		result = txn.exec_params(query, creator_id, status);
-	} else {
+	}
+	else {
 		result = txn.exec_params(query, creator_id);
 	}
 
@@ -271,7 +270,6 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 		else
 			image_url_field = std::nullopt;
 
-		// Crear instancia de UserModel para el creador
 		UserModel creator(
 			row["creator_id"].as<std::string>(),
 			row["creator_community_id"].as<std::string>(),
@@ -280,10 +278,9 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 			row["creator_type"].as<std::string>(),
 			row["creator_balance"].as<int>(),
 			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>());
+			row["creator_updated_at"].as<std::string>(), std::nullopt);
 
-		// Crear instancia de UserModel para el comprador, si existe
-		UserModel buyer;
+		std::optional<UserModel> buyer = std::nullopt;
 		if (buyer_id_field) {
 			buyer = UserModel(
 				row["buyer_id"].as<std::string>(),
@@ -293,10 +290,9 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 				row["buyer_type"].as<std::string>(),
 				row["buyer_balance"].as<int>(),
 				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>());
+				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
-		// Crear instancia de ServiceModel con UserModel como argumento adicional
 		all_services.push_back(std::make_unique<ServiceModel>(
 			row["service_id"].as<std::string>(),
 			row["creator_id"].as<std::string>(),
@@ -356,7 +352,8 @@ std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connectio
 			std::nullopt,
 			result[0]["created_at"].as<std::string>(),
 			result[0]["updated_at"].as<std::string>());
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to delete service: " << e.what() << std::endl;
 		return nullptr;
 	}
@@ -368,9 +365,10 @@ bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string 
 		if (tittle != "") pqxx::result result = txn.exec_params("UPDATE services SET title = $1 WHERE id = $2", tittle, id);
 		if (description != "") pqxx::result result = txn.exec_params("UPDATE services SET description = $1 WHERE id = $2", description, id);
 		if (!(price < 0)) pqxx::result result = txn.exec_params("UPDATE services SET price = $1 WHERE id = $2", price, id);
-		txn.commit(); 
+		txn.commit();
 		return true;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to update service: " << e.what() << std::endl;
 		return false;
 	}
@@ -421,7 +419,8 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 	pqxx::result result;
 	if (!type.empty()) {
 		result = txn.exec_params(query, creator_id, type);
-	} else {
+	}
+	else {
 		result = txn.exec_params(query, creator_id);
 	}
 
@@ -448,10 +447,10 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 			row["creator_type"].as<std::string>(),
 			row["creator_balance"].as<int>(),
 			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>());
+			row["creator_updated_at"].as<std::string>(), std::nullopt);
 
 		// Crear instancia de UserModel para el comprador, si existe
-		UserModel buyer;
+		std::optional<UserModel> buyer = std::nullopt;
 		if (buyer_id_field) {
 			buyer = UserModel(
 				row["buyer_id"].as<std::string>(),
@@ -461,7 +460,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 				row["buyer_type"].as<std::string>(),
 				row["buyer_balance"].as<int>(),
 				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>());
+				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
 		// Crear instancia de ServiceModel con UserModel como argumento adicional
@@ -490,7 +489,8 @@ bool ServiceModel::add_buyer(pqxx::connection& db, const std::string& service_id
 		pqxx::result result = txn.exec_params("UPDATE services SET buyer_id = $1 WHERE id = $2", buyer_id, service_id);
 		txn.commit();
 		return true;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to update service: " << e.what() << std::endl;
 		return false;
 	}
@@ -543,7 +543,8 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_sold_by_cr
 		}
 
 		return all_services;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to get services sold: " << e.what() << '\n';
 		return {};
 	}
