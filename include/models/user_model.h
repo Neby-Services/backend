@@ -23,7 +23,7 @@ private:
 	std::optional<CommunityModel> _community;
 
 public:
-
+ 
 	UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at, std::optional<CommunityModel> community);
 
 	std::string get_id() const;
