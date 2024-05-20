@@ -92,9 +92,6 @@ void ServiceController::get_service_by_id(pqxx::connection& db, const crow::requ
 		crow::json::wvalue service_json;
 
 		service_json["id"] = service.get()->get_id();
-		service_json["creator_id"] = service.get()->get_creator_id();
-		if (service.get()->get_buyer_id().has_value())
-			service_json["buyer_id"] = service.get()->get_buyer_id().value();
 		service_json["title"] = service.get()->get_title();
 		service_json["description"] = service.get()->get_description();
 		service_json["price"] = service.get()->get_price();
@@ -247,11 +244,8 @@ void ServiceController::get_services_self(pqxx::connection& db, const crow::requ
 		crow::json::wvalue::list services;
 		for (unsigned int i = 0; i < all_services.size(); ++i) {
 			crow::json::wvalue service;
-
+ 
 			service["id"] = all_services[i].get()->get_id();
-			service["creator_id"] = all_services[i].get()->get_creator_id();
-			if (all_services[i].get()->get_buyer_id().has_value())
-				service["buyer_id"] = all_services[i].get()->get_buyer_id().value();
 			service["title"] = all_services[i].get()->get_title();
 			service["description"] = all_services[i].get()->get_description();
 			service["price"] = all_services[i].get()->get_price();
