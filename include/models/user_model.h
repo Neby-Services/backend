@@ -7,9 +7,11 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
+#include <optional>
+#include <models/community_model.h>
 
 class UserModel {
-	private:
+private:
 	std::string _id;
 	std::string _community_id;
 	std::string _username;
@@ -18,12 +20,13 @@ class UserModel {
 	int _balance;
 	std::string _created_at;
 	std::string _updated_at;
+	std::optional<CommunityModel> _community;
 
-	public:
+public:
 	UserModel();
 	UserModel(std::string id, std::string username);
 
-	UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at);
+	UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at, std::optional<CommunityModel> community);
 
 	std::string get_id() const;
 	std::string get_community_id() const;
@@ -33,6 +36,7 @@ class UserModel {
 	int get_balance() const;
 	std::string get_created_at() const;
 	std::string get_updated_at() const;
+	std::optional<CommunityModel> get_community();
 
 	static std::unique_ptr<UserModel> create_user(pqxx::connection& db, const std::string& community_id, const std::string& username, const std::string& email, const std::string& password, const std::string& type, const int balance, bool throw_when_null = false);
 	static std::vector<std::unique_ptr<UserModel>> get_users(pqxx::connection& db);

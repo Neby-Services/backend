@@ -3,7 +3,7 @@
 UserModel::UserModel() : _id("") {}
 UserModel::UserModel(std::string id, std::string username) : _id(id), _username(username) {}
 
-UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at) {}
+UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at, std::optional<CommunityModel> community) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at), _community(community) {}
 
 std::string UserModel::get_id() const { return _id; }
 std::string UserModel::get_community_id() const { return _community_id; }
@@ -13,6 +13,7 @@ std::string UserModel::get_type() const { return _type; }
 int UserModel::get_balance() const { return _balance; }
 std::string UserModel::get_created_at() const { return _created_at; }
 std::string UserModel::get_updated_at() const { return _updated_at; }
+std::optional<CommunityModel> UserModel::get_community() { return _community; }
 
 std::unique_ptr<UserModel> UserModel::create_user(pqxx::connection& db, const std::string& community_id, const std::string& username, const std::string& email, const std::string& password, const std::string& type, const int balance, bool throw_when_null) {
 	pqxx::work txn(db);
@@ -36,7 +37,7 @@ std::unique_ptr<UserModel> UserModel::create_user(pqxx::connection& db, const st
 		result[0]["type"].as<std::string>(),
 		result[0]["balance"].as<int>(),
 		result[0]["created_at"].as<std::string>(),
-		result[0]["updated_at"].as<std::string>());
+		result[0]["updated_at"].as<std::string>(), std::nullopt);
 }
 
 std::vector<std::unique_ptr<UserModel>> UserModel::get_users(pqxx::connection& db) {
@@ -57,7 +58,7 @@ std::vector<std::unique_ptr<UserModel>> UserModel::get_users(pqxx::connection& d
 			row["type"].as<std::string>(),
 			row["balance"].as<int>(),
 			row["created_at"].as<std::string>(),
-			row["updated_at"].as<std::string>()));
+			row["updated_at"].as<std::string>(), std::nullopt));
 	}
 
 	return all_users;
@@ -70,7 +71,8 @@ bool exists_user(pqxx::connection& db, const std::string& column, const std::str
 		txn.commit();
 		bool userExists = !result.empty() && !result[0][0].is_null();
 		return userExists;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		return false;
 	}
 }
@@ -87,7 +89,13 @@ bool UserModel::exists_email(pqxx::connection& db, const std::string& email) {
 
 std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& column, const std::string& value, bool throw_when_null) {
 	pqxx::work txn(db);
-	pqxx::result result = txn.exec_params(std::format("SELECT id, community_id, username, email, type, balance, created_at, updated_at FROM users WHERE {} = $1", column), value);
+	pqxx::result result = txn.exec_params(
+		std::format(
+			"SELECT users.id, users.community_id, users.username, users.email, users.type, users.balance, users.created_at, users.updated_at, "
+			"communities.id AS community_id, communities.name AS community_name, communities.code AS community_code, communities.created_at AS community_created_at, communities.updated_at AS community_updated_at "
+			"FROM users "
+			"JOIN communities ON users.community_id = communities.id "
+			"WHERE users.{} = $1", column), value);
 	txn.commit();
 
 	if (result.empty()) {
@@ -97,6 +105,14 @@ std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& col
 			return nullptr;
 	}
 
+	CommunityModel community(
+		result[0]["community_id"].as<std::string>(),
+		result[0]["community_name"].as<std::string>(),
+		result[0]["community_code"].as<std::string>(),
+		result[0]["community_created_at"].as<std::string>(),
+		result[0]["community_updated_at"].as<std::string>()
+	);
+
 	return std::make_unique<UserModel>(
 		result[0]["id"].as<std::string>(),
 		result[0]["community_id"].as<std::string>(),
@@ -105,7 +121,9 @@ std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& col
 		result[0]["type"].as<std::string>(),
 		result[0]["balance"].as<int>(),
 		result[0]["created_at"].as<std::string>(),
-		result[0]["updated_at"].as<std::string>());
+		result[0]["updated_at"].as<std::string>(),
+		community
+	);
 }
 
 std::unique_ptr<UserModel> UserModel::get_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
@@ -125,7 +143,8 @@ std::string UserModel::get_password_by_email(pqxx::connection& db, const std::st
 		txn.commit();
 		if (result.empty()) return "";
 		return result[0]["password"].as<std::string>();
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		return "";
 	}
 }
@@ -141,7 +160,8 @@ bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id) {
 		if (!result.empty() && !result[0][0].is_null()) return true;
 
 		return false;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to delete user: " << e.what() << std::endl;
 		return false;
 	}
@@ -155,7 +175,8 @@ bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, c
 		if (password != "") pqxx::result result = txn.exec_params("UPDATE users SET password = $1 WHERE id = $2", password, id);
 		txn.commit();
 		return true;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to update user: " << e.what() << std::endl;
 		return false;
 	}
@@ -168,7 +189,8 @@ bool UserModel::update_user_admin(pqxx::connection& db, const std::string& id, c
 		if (!(balance < 0)) pqxx::result result = txn.exec_params("UPDATE users SET balance = $1 WHERE id = $2", balance, id);
 		txn.commit();
 		return true;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to update user: " << e.what() << std::endl;
 		return false;
 	}
