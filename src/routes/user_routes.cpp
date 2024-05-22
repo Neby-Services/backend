@@ -1,7 +1,6 @@
 #include <routes/user_routes.h>
 
-void initialize_user_routes(NebyApp& app) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+void initialize_user_routes(NebyApp& app, ConnectionPool & pool) {
 
 	CROW_ROUTE(app, "/api/users").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&pool](const crow::request& req, crow::response& res) {
 		auto conn = pool.getConnection();
