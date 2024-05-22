@@ -72,7 +72,8 @@ void AuthController::register_user(pqxx::connection& db, const crow::request& re
 		res.end();
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error in register_user: " << e.what() << std::endl;
+
+		CROW_LOG_ERROR << "Error in register_user controller: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }
@@ -133,8 +134,8 @@ void AuthController::login_user(pqxx::connection& db, const crow::request& req, 
 
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error in register_user: " << e.what() << std::endl;
-		handle_error(res, "INTERNAL SERVER ERROR", 500);
+		CROW_LOG_ERROR << "Error in login_user controller: " << e.what();
+		handle_error(res, "internal server error", 500);
 	}
 }
 
@@ -174,7 +175,7 @@ void AuthController::get_self(pqxx::connection& db, const crow::request& req, cr
 
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error in get self: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in get_self controller: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }

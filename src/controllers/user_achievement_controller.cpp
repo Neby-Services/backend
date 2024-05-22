@@ -27,13 +27,14 @@ void UserAchievementController::get_user_achievements_self(pqxx::connection& db,
 			user_achievements_json.push_back(user_achievement);
 		}
 
-		crow::json::wvalue data{{"user_achievements", user_achievements_json}};
+		crow::json::wvalue data{ {"user_achievements", user_achievements_json} };
 
 		res.code = 200;
 		res.write(data.dump());
 		res.end();
-	} catch (const std::exception& e) {
-		std::cerr << "Error in get user achievements self: " << e.what() << std::endl;
+	}
+	catch (const std::exception& e) {
+		CROW_LOG_ERROR << "Error in get_user_achievements_self: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }

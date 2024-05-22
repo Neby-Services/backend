@@ -1,7 +1,7 @@
 # GET /api/auth/register Endpoint Testing Documentation
 
 This document outlines the testing scenarios for the `register_user` endpoint in the `AuthController` class.
-
+   
 ## Test Scenarios
 
 1. **Valid Registration**

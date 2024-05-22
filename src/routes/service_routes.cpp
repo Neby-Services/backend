@@ -3,7 +3,7 @@
 void initialize_service_routes(NebyApp& app) {
 	// ** GET /api/services
 
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 10);
+	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
 
 	CROW_ROUTE(app, "/api/services").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&pool](const crow::request& req, crow::response& res) {
 		auto conn = pool.getConnection();
