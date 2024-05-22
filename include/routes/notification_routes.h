@@ -9,4 +9,4 @@
 #include <utils/common.h>
 #include <pqxx/pqxx>
 
-void initialize_notifications_routes(NebyApp& app);
+void initialize_notifications_routes(NebyApp& app, ConnectionPool & pool);

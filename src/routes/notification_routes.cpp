@@ -1,7 +1,6 @@
 #include <routes/notification_routes.h>
 
-void initialize_notifications_routes(NebyApp& app) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+void initialize_notifications_routes(NebyApp& app, ConnectionPool & pool) {
 
 	CROW_ROUTE(app, "/api/notifications/<string>")
 		.methods(crow::HTTPMethod::POST)

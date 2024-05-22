@@ -1,7 +1,7 @@
 #include <middlewares/verify_jwt.h>
 
 void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& ctx) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 	std::string token = get_token_cookie(req);
 

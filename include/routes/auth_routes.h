@@ -8,4 +8,4 @@
 #include <pqxx/pqxx>
 #include <db/connection_pool.h>
 
-void initialize_auth_routes(NebyApp& app);
+void initialize_auth_routes(NebyApp& app, ConnectionPool & pool);
