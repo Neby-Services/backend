@@ -2,7 +2,6 @@
 
 void HandleAchievements::before_handle(crow::request& req, crow::response& res, context& ctx) {}
 void HandleAchievements::after_handle(crow::request& req, crow::response& res, context& ctx) {
-	std::cout << "req: " << req.body << std::endl;
 	crow::json::rvalue body = crow::json::load(req.body);
 	std::vector<std::string> tags;
 	if (body.has("tags")) {

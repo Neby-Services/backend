@@ -16,8 +16,6 @@ void ServiceController::create_service(pqxx::connection& db, crow::request& req,
 
 		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, creator_id);
 
-		std::cout << "id creator -> " << creator_id << std::endl;
-
 		if (price < 0) {
 			handle_error(res, "invalid price", 400);
 			return;
@@ -63,7 +61,7 @@ void ServiceController::create_service(pqxx::connection& db, crow::request& req,
 		res.end();
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error creating service: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in create_service controller: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }
@@ -136,7 +134,7 @@ void ServiceController::get_service_by_id(pqxx::connection& db, const crow::requ
 
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error getting service: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in get_service_by_id: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }
@@ -215,7 +213,7 @@ void ServiceController::get_services(pqxx::connection& db, const crow::request& 
 		res.end();
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error getting services: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in get_services controller: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }
@@ -244,7 +242,7 @@ void ServiceController::get_services_self(pqxx::connection& db, const crow::requ
 		crow::json::wvalue::list services;
 		for (unsigned int i = 0; i < all_services.size(); ++i) {
 			crow::json::wvalue service;
- 
+
 			service["id"] = all_services[i].get()->get_id();
 			service["title"] = all_services[i].get()->get_title();
 			service["description"] = all_services[i].get()->get_description();
@@ -292,7 +290,7 @@ void ServiceController::get_services_self(pqxx::connection& db, const crow::requ
 		res.end();
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error getting user services: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in get_services_self: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
 }
@@ -336,7 +334,7 @@ void ServiceController::delete_service(pqxx::connection& db, const crow::request
 
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error deleting service: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in delete_service controller: " << e.what();
 		handle_error(res, "Error deleting service", 500);
 	}
 }
@@ -408,7 +406,7 @@ void ServiceController::update_service(pqxx::connection& db, const crow::request
 
 	}
 	catch (const std::exception& e) {
-		std::cerr << "Error updating service: " << e.what() << std::endl;
+		CROW_LOG_ERROR << "Error in update_service controller: " << e.what();
 		handle_error(res, "Error updating service", 500);
 	}
 }

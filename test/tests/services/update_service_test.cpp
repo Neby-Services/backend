@@ -311,7 +311,7 @@ TEST_F(UpdateServiceNotFoundAuth, update_service_not_found) {
 	EXPECT_EQ(response.status_code, 404) << "Expected 404 status code for service not found: ";
 	EXPECT_TRUE(json.contains("error"));
 	EXPECT_EQ(json["error"], "service not found");
-} 
+}
 
 /*
 TEST if user is auth, not admin, but the user is creator of service
@@ -429,10 +429,9 @@ protected:
 TEST_F(UpdateServiceCreatorAuth, update_service_creator) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services/" + _service_id_;
 	nlohmann::json update = {
-		{"price", 1}, 
-		{"tittle", "example"} }; 
+		{"price", 1},
+		{"tittle", "example"} };
 	auto response = cpr::Put(cpr::Url{ url_service }, cpr::Body{ update.dump() }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
-	std::cout << "Response creator service: " << response.text << std::endl;
 	auto json = nlohmann::json::parse(response.text);
 	EXPECT_EQ(response.status_code, 200) << "Expected 200 status code for service updated succesfully: ";
 	EXPECT_TRUE(json.contains("message"));
