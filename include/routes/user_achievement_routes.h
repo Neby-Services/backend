@@ -9,4 +9,4 @@
 #include <middlewares/index_middlewares.h>
 #include <pqxx/pqxx>
 
-void initialize_user_achievement_routes(NebyApp& app);
+void initialize_user_achievement_routes(NebyApp& app, ConnectionPool & pool);

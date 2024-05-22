@@ -1,7 +1,7 @@
 #include <utils/user_achievements_handler.h>
 
 void UserAchievementsHandler::handler(const std::vector<std::string>& tags, crow::json::rvalue body) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 	std::vector<std::unique_ptr<UserAchievementModel>> achievements;
 	std::string primary_user_id = "";
@@ -44,7 +44,7 @@ void UserAchievementsHandler::handler(const std::vector<std::string>& tags, crow
 }
 
 void UserAchievementsHandler::handle_achievement_one(const std::string& user_id, const std::string& user_achievement_id) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id, ServiceType::OFFERED);
@@ -55,7 +55,7 @@ void UserAchievementsHandler::handle_achievement_one(const std::string& user_id,
 }
 
 void UserAchievementsHandler::handle_achievement_two(const std::string& user_id, const std::string& user_achievement_id) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id, ServiceType::REQUESTED);
@@ -66,7 +66,7 @@ void UserAchievementsHandler::handle_achievement_two(const std::string& user_id,
 }
 
 void UserAchievementsHandler::handle_achievement_three(const std::string& user_id, const std::string& user_achievement_id) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id);
@@ -77,7 +77,7 @@ void UserAchievementsHandler::handle_achievement_three(const std::string& user_i
 }
 
 void UserAchievementsHandler::handle_achievement_four(const std::string& user_id, const std::string& user_achievement_id) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_sold_by_creator_id(*conn.get(), user_id);
@@ -88,7 +88,7 @@ void UserAchievementsHandler::handle_achievement_four(const std::string& user_id
 }
 
 void UserAchievementsHandler::handle_achievement_five(const std::string& user_id, const std::string& user_achievement_id) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
+	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 
 	std::vector<std::unique_ptr<NotificationModel>> notifications = NotificationModel::get_notifications_accepted_self(*conn.get(), user_id);

@@ -7,4 +7,4 @@
 #include <utils/common.h>
 #include <pqxx/pqxx>
 
-void initialize_user_routes(NebyApp& app);
+void initialize_user_routes(NebyApp& app, ConnectionPool & pool);

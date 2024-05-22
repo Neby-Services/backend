@@ -25,7 +25,6 @@ std::shared_ptr<pqxx::connection> ConnectionPool::getConnection() {
 
 void ConnectionPool::releaseConnection(std::shared_ptr<pqxx::connection> conn) {
 	std::unique_lock<std::mutex> lock(mutex_);
-
 	connections_.push_back(conn);
 
 	condition_.notify_one();
@@ -43,4 +42,3 @@ ConnectionPool::~ConnectionPool() {
 		conn->disconnect();
 	}
 }
- 

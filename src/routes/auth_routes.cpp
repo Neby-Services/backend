@@ -1,8 +1,7 @@
 #include <routes/auth_routes.h>
 
-void initialize_auth_routes(NebyApp& app) {
+void initialize_auth_routes(NebyApp& app, ConnectionPool & pool) {
 
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 100);
 
 	CROW_ROUTE(app, "/api/auth/register")
 		.methods(crow::HTTPMethod::POST)([&pool](const crow::request& req, crow::response& res) {

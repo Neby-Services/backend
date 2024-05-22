@@ -8,22 +8,15 @@
 
 class ConnectionPool {
 	public:
-	static ConnectionPool& getInstance(const std::string& connectionString, int poolSize) {
-		static ConnectionPool instance(connectionString, poolSize);
-		return instance;
-	}
-
-	ConnectionPool(const ConnectionPool&) = delete;
-	ConnectionPool& operator=(const ConnectionPool&) = delete;
+	ConnectionPool(const std::string& connectionString, int poolSize);
+	~ConnectionPool() ;
 
 	std::shared_ptr<pqxx::connection> getConnection();
 
 	void releaseConnection(std::shared_ptr<pqxx::connection> conn);
 
 	private:
-	ConnectionPool(const std::string& connectionString, int poolSize);
 
-	~ConnectionPool() ;
 	
 	std::shared_ptr<pqxx::connection> createConnection();
 
