@@ -20,6 +20,7 @@ int main() {
 
 		initialize_auth_routes(app, pool);
 		initialize_user_routes(app, pool);
+		initialize_rating_routes(app, pool);
 		initialize_service_routes(app, pool);
 		initialize_notifications_routes(app, pool);
 		initialize_user_achievement_routes(app, pool);

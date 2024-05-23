@@ -9,4 +9,4 @@
 #include <pqxx/pqxx>
 
 #include <middlewares/index_middlewares.h>
-void initialize_rating_routes(NebyApp& app);
+void initialize_rating_routes(NebyApp& app, ConnectionPool & pool);

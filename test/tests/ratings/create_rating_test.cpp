@@ -246,7 +246,7 @@ class CreateRatingCorrect : public testing::Test {
     	    {"type", "requested"} };
     	auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
     	auto s_json = nlohmann::json::parse(s_create.text);
-    	std::string _service_id_ = s_json["id"];
+    	_service_id_ = s_json["id"];
 	}
 
 	void TearDown() override {
@@ -261,9 +261,14 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 	auto n_create = cpr::Post(cpr::Url{ create_notification_url }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto n_json = nlohmann::json::parse(n_create.text);
 	std::string _notification_id_ = n_json["id"];
+
+	std::cout << "notification: " << n_create.text << std::endl << "service: " << _service_id_ << std::endl;
     
 	std::string n_accept_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification_id_ + "?action=accepted" ;
-	auto n_accept = cpr::Post(cpr::Url{ n_accept_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
+
+	auto n_accept = cpr::Put(cpr::Url{ n_accept_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
+
+	std::cout << "accepted: " << n_accept.text << std::endl;
 
     std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
 
@@ -273,9 +278,10 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 	auto response = cpr::Post(cpr::Url{url_rating}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
 
-	EXPECT_EQ(response.status_code, 404) << "Expected 404 status code for service not closed: ";
-	EXPECT_TRUE(json.contains("error"));
-	EXPECT_EQ(json["error"], "service is not closed");
+	std::cout << response.text << std::endl;
+
+	EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for rating ccreated succesfully: ";
+	EXPECT_TRUE(json.contains("id"));
 }
 
 /*
