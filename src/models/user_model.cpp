@@ -122,7 +122,7 @@ std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& col
 		community
 	);
 }
-
+ 
 std::unique_ptr<UserModel> UserModel::get_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 	return get_user(db, "id", id, throw_when_null);
 }

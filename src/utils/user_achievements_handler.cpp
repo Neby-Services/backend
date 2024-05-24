@@ -71,6 +71,7 @@ void UserAchievementsHandler::handle_achievement_three(const std::string& user_i
 
 	std::vector<std::unique_ptr<ServiceModel>> services = ServiceModel::get_services_self_by_type(*conn.get(), user_id);
 	if (services.size() >= 1) {
+		CROW_LOG_INFO << "achievement completed!"; 
 		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
 	}
 	pool.releaseConnection(conn);
@@ -91,7 +92,7 @@ void UserAchievementsHandler::handle_achievement_five(const std::string& user_id
 	ConnectionPool pool(connection_string, 1);
 	auto conn = pool.getConnection();
 
-	std::vector<std::unique_ptr<NotificationModel>> notifications = NotificationModel::get_notifications_accepted_self(*conn.get(), user_id);
+	std::vector<std::unique_ptr<NotificationServiceModel>> notifications = NotificationServiceModel::get_notifications_accepted_self(*conn.get(), user_id);
 	if (notifications.size() >= 5) {
 		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
 	}

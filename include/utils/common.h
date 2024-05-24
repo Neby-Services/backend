@@ -15,17 +15,23 @@ extern const std::string DB_HOST;
 extern const int DB_PORT;
 extern const int HTTP_PORT;
 extern const std::string connection_string;
-extern const std::vector<std::string> achievements_titles; 
+extern const std::vector<std::string> achievements_titles;
 
-struct Roles { 
+struct Roles {
 	static const std::string ADMIN;
 	static const std::string NEIGHBOR;
 };
 
-struct NotificationStatus {
+struct NotificationServicesStatus {
 	static const std::string PENDING;
 	static const std::string ACCEPTED;
 	static const std::string REFUSED;
+};
+
+struct NotificationType {
+	static const std::string SERVICES;
+	static const std::string ACHIEVEMENTS;
+	static const std::string REVIEWS;
 };
 
 struct ServiceStatus {
