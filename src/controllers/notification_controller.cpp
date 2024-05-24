@@ -15,7 +15,7 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 		}
 
 		//? check that the notifier has not previously requested the service
-		if (NotificationModel::is_requested(db, notifier_id)) {
+		if (NotificationModel::is_requested(db, notifier_id, service_id)) {
 			handle_error(res, "you cannot request the service again", 400);
 			return;
 		}
@@ -23,7 +23,7 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 		//? check if the notifier has enough money
 		if (notifier_balance < service.get()->get_price()) {
 			handle_error(res, "there is not enough balance", 400);
-			return;
+			return; 
 		}
 
 		//? check if service is in community of solicitant

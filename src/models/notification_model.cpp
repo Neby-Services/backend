@@ -30,17 +30,18 @@ std::unique_ptr<NotificationModel> NotificationModel::create_notification(pqxx::
 			result[0]["status"].as<std::string>(),
 			result[0]["created_at"].as<std::string>(),
 			result[0]["updated_at"].as<std::string>());
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error to create notification: " << e.what() << std::endl;
 		return nullptr;
 	}
 }
 
-bool NotificationModel::is_requested(pqxx::connection& db, const std::string& sender_id) {
+bool NotificationModel::is_requested(pqxx::connection& db, const std::string& sender_id, const std::string& service_id) {
 	try {
 		pqxx::work txn(db);
 
-		pqxx::result result = txn.exec_params("SELECT COUNT(*) FROM notifications WHERE sender_id = $1", sender_id);
+		pqxx::result result = txn.exec_params("SELECT COUNT(*) FROM notifications WHERE sender_id = $1 AND service_id = $2", sender_id, service_id);
 
 		txn.commit();
 
@@ -51,7 +52,8 @@ bool NotificationModel::is_requested(pqxx::connection& db, const std::string& se
 		}
 
 		return false;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error to check notification sender_id exists yet: " << e.what() << std::endl;
 
 		return false;
@@ -81,7 +83,8 @@ std::unique_ptr<NotificationModel> NotificationModel::handle_notification_status
 			result[0]["created_at"].as<std::string>(),
 			result[0]["updated_at"].as<std::string>());
 
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << e.what() << '\n';
 		return nullptr;
 	}
@@ -105,7 +108,8 @@ bool NotificationModel::refused_notifications(pqxx::connection& db, const std::s
 
 		return true;
 
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error al actualizar las notificaciones: " << e.what() << '\n';
 		return false;
 	}
@@ -163,7 +167,8 @@ std::vector<std::unique_ptr<NotificationModel>> NotificationModel::get_notificat
 
 		return notifications;
 
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Error al actualizar las notificaciones: " << e.what() << '\n';
 		return {};
 	}

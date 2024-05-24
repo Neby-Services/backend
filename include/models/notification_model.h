@@ -6,7 +6,7 @@
 #include <vector>
 
 class NotificationModel {
-	private:
+private:
 	std::string _id;
 	std::string _sender_id;
 	std::string _service_id;
@@ -14,7 +14,7 @@ class NotificationModel {
 	std::string _created_at;
 	std::string _updated_at;
 
-	public:
+public:
 	NotificationModel(std::string id, std::string sender_id, std::string service_id, std::string status, std::string created_at, std::string updated_at);
 
 	std::string get_id() const;
@@ -27,7 +27,7 @@ class NotificationModel {
 	static std::unique_ptr<NotificationModel> create_notification(pqxx::connection& db, const std::string& sender_id, const std::string& service_id, const std::string& status = NotificationStatus::PENDING, bool throw_when_null = false);
 
 	// * if the requester has already requested the service before, it returns true, otherwise false
-	static bool is_requested(pqxx::connection& db, const std::string& sender_id);
+	static bool is_requested(pqxx::connection& db, const std::string& sender_id, const std::string& service_id);
 
 	static std::unique_ptr<NotificationModel> handle_notification_status(pqxx::connection& db, const std::string& status, const std::string& notification_id, bool throw_when_null = false);
 
