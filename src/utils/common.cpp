@@ -11,9 +11,13 @@ const std::string connection_string = std::format("dbname={} user={} password={}
 const std::string Roles::ADMIN = "admin";
 const std::string Roles::NEIGHBOR = "neighbor";
 
-const std::string NotificationStatus::PENDING = "pending";
-const std::string NotificationStatus::ACCEPTED = "accepted";
-const std::string NotificationStatus::REFUSED = "refused";
+const std::string NotificationServicesStatus::PENDING = "pending";
+const std::string NotificationServicesStatus::ACCEPTED = "accepted";
+const std::string NotificationServicesStatus::REFUSED = "refused";
+
+const std::string NotificationType::SERVICES = "services";
+const std::string NotificationType::ACHIEVEMENTS = "achievements";
+const std::string NotificationType::REVIEWS = "reviews";
 
 const std::string ServiceStatus::CLOSED = "closed";
 const std::string ServiceStatus::OPEN = "open";
@@ -36,5 +40,5 @@ const std::vector<std::string> achievements_titles = {
 	AchievementsTitles::ACHIEVEMENT_TWO,
 	AchievementsTitles::ACHIEVEMENT_THREE,
 	AchievementsTitles::ACHIEVEMENT_FOUR,
-	AchievementsTitles::ACHIEVEMENT_FIVE 
-	};
+	AchievementsTitles::ACHIEVEMENT_FIVE
+};

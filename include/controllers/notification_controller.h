@@ -3,6 +3,7 @@
 #include <crow.h>
 #include <models/notification_model.h>
 #include <models/service_model.h>
+#include <models/notification_service_model.h>
 #include <models/user_model.h>
 #include <utils/common.h>
 #include <utils/utils.h>
@@ -13,6 +14,9 @@
 
 class NotificationController {
 	public:
-	static void create_notification(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id);
+	static void create_notification(pqxx::connection& db, const crow::request& req, crow::response& res);
 	static void handle_notification(pqxx::connection& db, crow::request& req, crow::response& res, const std::string& notification_id);
+	static void create_notification_service(pqxx::connection& db, const crow::request& req, crow::response& res);
+	static void get_notification_service_by_id(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id);
+	static void get_notifications(pqxx::connection& db, const crow::request& req, crow::response& res);
 };
