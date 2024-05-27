@@ -259,29 +259,17 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 
 	std::string create_notification_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications?type=services&service_id=" + _service_id_;
 	auto n_create = cpr::Post(cpr::Url{ create_notification_url }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
-	
-	std::cout << "service id: " << _service_id_ << std::endl << "notification create: " << n_create.text << std::endl;
-	
 	auto n_json = nlohmann::json::parse(n_create.text);
 	std::string _notification_id_ = n_json["notification_service"]["id"];
 
-	std::cout << "notification: " << n_create.text << std::endl << "notification: " << _notification_id_ << std::endl;
-    
 	std::string n_accept_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification_id_ + "?action=accepted" ;
-
 	auto n_accept = cpr::Put(cpr::Url{ n_accept_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
-
-	std::cout << "accepted: " << n_accept.text << std::endl;
-
+	
     std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
-
     nlohmann::json new_rating = {
         {"rating", "9"} };
-
 	auto response = cpr::Post(cpr::Url{url_rating}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
-
-	std::cout << response.text << std::endl;
 
 	EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for rating ccreated succesfully: ";
 	EXPECT_TRUE(json.contains("id"));
