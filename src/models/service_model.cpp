@@ -93,13 +93,13 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 		"FROM services AS s "
 		"JOIN users AS uc ON s.creator_id = uc.id "
 		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
-		"WHERE uc.community_id = $1";
+		"WHERE uc.community_id = $1 ";
 
 	// Agregar filtro de status si se proporciona
 	if (!status.empty()) {
 		query += " AND s.status = $2";
 	}
-
+	query += " ORDER BY s.updated_at DESC;";
 	pqxx::result result;
 	if (!status.empty()) {
 		result = txn.exec_params(query, community_id, status);

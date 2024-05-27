@@ -332,12 +332,13 @@ void NotificationController::get_notifications(pqxx::connection& db, const crow:
 				std::unique_ptr<UserModel> sender = UserModel::get_user_by_id(db, service_notification.get_sender_id(), true);
 				crow::json::wvalue sender_json;
 				sender_json["id"] = sender.get()->get_id();
+				sender_json["community_id"] = sender.get()->get_community_id();
 				sender_json["username"] = sender.get()->get_username();
 				sender_json["type"] = sender.get()->get_type();
 				sender_json["email"] = sender.get()->get_email();
 				sender_json["balance"] = sender.get()->get_balance();
 				sender_json["created_at"] = sender.get()->get_created_at();
-				sender_json["updated_at"] = sender.get()->get_updated_at(); 
+				sender_json["updated_at"] = sender.get()->get_updated_at();
 
 				service_notification_json["sender"] = crow::json::wvalue(sender_json);
 
