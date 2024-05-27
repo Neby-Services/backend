@@ -435,6 +435,18 @@ bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string 
 	}
 }
 
+bool ServiceModel::close_service(pqxx::connection& db, const std::string& service_id) {
+	try {
+		pqxx::work txn(db);
+		pqxx::result result = txn.exec_params("UPDATE services SET status = $1 WHERE id = $2", ServiceStatus::CLOSED, service_id);
+		txn.commit();
+		return true;
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to close service: " << e.what() << std::endl;
+		return false;		
+	}
+}
+
 std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_type(pqxx::connection& db, const std::string& creator_id, const std::string& type) {
 	std::vector<std::unique_ptr<ServiceModel>> all_services;
 

@@ -5,6 +5,7 @@
 #include <routes/service_routes.h>
 #include <routes/user_routes.h>
 #include <routes/user_achievement_routes.h>
+#include <routes/rating_routes.h>
 #include <middlewares/index_middlewares.h>
 #include <cstdlib>
 #include <format>
@@ -19,6 +20,7 @@ int main() {
 
 		initialize_auth_routes(app, pool);
 		initialize_user_routes(app, pool);
+		initialize_rating_routes(app, pool);
 		initialize_service_routes(app, pool);
 		initialize_notifications_routes(app, pool);
 		initialize_user_achievement_routes(app, pool);

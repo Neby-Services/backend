@@ -2,6 +2,7 @@
 
 #include <models/user_model.h>
 #include <utils/errors.h>
+#include <utils/common.h>
 #include <memory>
 #include <optional>
 #include <pqxx/pqxx>
@@ -54,6 +55,8 @@ class ServiceModel {
 	static std::unique_ptr<ServiceModel> delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null = false);
 
 	static bool update_service_by_id(pqxx::connection& db, const std::string id, const std::string tittle, const std::string description, const int price);
+
+	static bool close_service(pqxx::connection& db, const std::string& service_id);
 
 	static bool add_buyer(pqxx::connection& db, const std::string& service_id, const std::string& buyer_id);
 
