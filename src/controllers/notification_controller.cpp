@@ -309,8 +309,37 @@ void NotificationController::get_notifications(pqxx::connection& db, const crow:
 				service_notification_json["id"] = service_notification.get_id();
 				service_notification_json["status"] = service_notification.get_status();
 				service_notification_json["service_id"] = service_notification.get_service_id();
-				service_notification_json["notification_id"] = service_notification.get_sender_id();
-				service_notification_json["sender_id"] = service_notification.get_notification_id();
+				service_notification_json["sender_id"] = service_notification.get_sender_id();
+				service_notification_json["notification_id"] = service_notification.get_notification_id();
+
+				std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_notification.get_service_id(), true);
+
+				crow::json::wvalue service_json;
+
+				service_json["id"] = service.get()->get_id();
+				service_json["title"] = service.get()->get_title();
+				service_json["description"] = service.get()->get_description();
+				service_json["price"] = service.get()->get_price();
+				service_json["status"] = service.get()->get_status();
+				service_json["type"] = service.get()->get_type();
+				if (service.get()->get_image_url().has_value())
+					service_json["image_url"] = service.get()->get_image_url().value();
+				service_json["created_at"] = service.get()->get_created_at();
+				service_json["updated_at"] = service.get()->get_updated_at();
+
+				service_notification_json["service"] = crow::json::wvalue(service_json);
+
+				std::unique_ptr<UserModel> sender = UserModel::get_user_by_id(db, service_notification.get_sender_id(), true);
+				crow::json::wvalue sender_json;
+				sender_json["id"] = sender.get()->get_id();
+				sender_json["username"] = sender.get()->get_username();
+				sender_json["type"] = sender.get()->get_type();
+				sender_json["email"] = sender.get()->get_email();
+				sender_json["balance"] = sender.get()->get_balance();
+				sender_json["created_at"] = sender.get()->get_created_at();
+				sender_json["updated_at"] = sender.get()->get_updated_at(); 
+
+				service_notification_json["sender"] = crow::json::wvalue(sender_json);
 
 				notification["service_notification"] = crow::json::wvalue(service_notification_json);
 			}
