@@ -263,9 +263,9 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 	std::cout << "service id: " << _service_id_ << std::endl << "notification create: " << n_create.text << std::endl;
 	
 	auto n_json = nlohmann::json::parse(n_create.text);
-	std::string _notification_id_ = n_json["id"];
+	std::string _notification_id_ = n_json["notification_service"]["id"];
 
-	std::cout << "notification: " << n_create.text << std::endl << "service: " << _service_id_ << std::endl;
+	std::cout << "notification: " << n_create.text << std::endl << "notification: " << _notification_id_ << std::endl;
     
 	std::string n_accept_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification_id_ + "?action=accepted" ;
 

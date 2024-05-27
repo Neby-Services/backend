@@ -25,9 +25,6 @@ void RatingController::create_rating(pqxx::connection& db, const crow::request& 
 			return;
         }
 
-            handle_error(res, "tamare es mes tonta i no naix tu tme", 400);
-			return;
-
         if (service->get_type() == ServiceType::OFFERED) {
             if (service->get_buyer_id() != body["id"].s()) {
                 handle_error(res, "user can not rate this service", 403);

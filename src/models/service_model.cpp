@@ -438,7 +438,7 @@ bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string 
 bool ServiceModel::close_service(pqxx::connection& db, const std::string& service_id) {
 	try {
 		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params("UPDATE services SET service_status = $1 WHERE id = $2", ServiceStatus::CLOSED, service_id);
+		pqxx::result result = txn.exec_params("UPDATE services SET status = $1 WHERE id = $2", ServiceStatus::CLOSED, service_id);
 		txn.commit();
 		return true;
 	} catch (const std::exception& e) {
