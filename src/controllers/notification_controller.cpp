@@ -251,6 +251,12 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 				return;
 			}
 
+			bool success_close_service = ServiceModel::close_service(db, service_id);
+			if (!success_close_service) {
+				handle_error(res, "error in close service", 400);
+				return;
+			}
+
 			bool succes_refused = NotificationServiceModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);
 
 			if (!succes_refused) {

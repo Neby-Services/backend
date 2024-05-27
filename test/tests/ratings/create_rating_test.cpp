@@ -257,8 +257,11 @@ class CreateRatingCorrect : public testing::Test {
 
 TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 
-	std::string create_notification_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _service_id_;
+	std::string create_notification_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications?type=services&service_id=" + _service_id_;
 	auto n_create = cpr::Post(cpr::Url{ create_notification_url }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
+	
+	std::cout << "service id: " << _service_id_ << std::endl << "notification create: " << n_create.text << std::endl;
+	
 	auto n_json = nlohmann::json::parse(n_create.text);
 	std::string _notification_id_ = n_json["id"];
 
