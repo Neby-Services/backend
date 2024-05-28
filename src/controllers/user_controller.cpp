@@ -2,24 +2,34 @@
 
 void UserController::get_users(pqxx::connection& db, const crow::request& req, crow::response& res) {
 	try {
-		std::vector<std::unique_ptr<UserModel>> allUsers = UserModel::get_users(db);
+
+		crow::json::rvalue body = crow::json::load(req.body);
+
+		const std::string admin_community_id = body["request_community_id"].s();
+
+		std::vector<UserModel> allUsers = UserModel::get_users_admin(db, admin_community_id);
+
 		crow::json::wvalue::list users;
 		for (unsigned int i = 0; i < allUsers.size(); ++i) {
 			crow::json::wvalue user;
-			user["id"] = allUsers[i].get()->get_id();
-			user["community_id"] = allUsers[i].get()->get_community_id();
-			user["username"] = allUsers[i].get()->get_username();
-			user["email"] = allUsers[i].get()->get_email();
-			user["type"] = allUsers[i].get()->get_type();
-			user["balance"] = allUsers[i].get()->get_balance();
-			user["created_at"] = allUsers[i].get()->get_created_at();
-			user["updated_at"] = allUsers[i].get()->get_updated_at();
+			user["id"] = allUsers[i].get_id();
+			user["community_id"] = allUsers[i].get_community_id();
+			user["username"] = allUsers[i].get_username();
+			user["email"] = allUsers[i].get_email();
+			user["type"] = allUsers[i].get_type();
+			user["balance"] = allUsers[i].get_balance();
+			user["created_at"] = allUsers[i].get_created_at();
+			user["updated_at"] = allUsers[i].get_updated_at();
 			users.push_back(user);
 		}
 		crow::json::wvalue data{ {"users", users} };
 		res.code = 200;
 		res.write(data.dump());
 		res.end();
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in get_users controller: " << e.what();
@@ -29,11 +39,6 @@ void UserController::get_users(pqxx::connection& db, const crow::request& req, c
 
 void UserController::get_user_by_id(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& user_id) {
 	try {
-		if (user_id.empty()) {
-			handle_error(res, "id must be provided", 400);
-			return;
-		}
-
 		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
 
 		if (!user) {
@@ -43,13 +48,22 @@ void UserController::get_user_by_id(pqxx::connection& db, const crow::request& r
 
 		crow::json::wvalue user_data;
 		user_data["id"] = user.get()->get_id();
-		user_data["community_id"] = user.get()->get_community_id();
 		user_data["username"] = user.get()->get_username();
 		user_data["email"] = user.get()->get_email();
 		user_data["type"] = user.get()->get_type();
 		user_data["balance"] = user.get()->get_balance();
 		user_data["created_at"] = user.get()->get_created_at();
 		user_data["updated_at"] = user.get()->get_updated_at();
+		user_data["community_id"] = user.get()->get_community_id();
+
+		crow::json::wvalue community_data_json;
+		community_data_json["id"] = user.get()->get_community().value().get_id();
+		community_data_json["name"] = user.get()->get_community().value().get_name();
+		community_data_json["code"] = user.get()->get_community().value().get_code();
+		community_data_json["created_at"] = user.get()->get_community().value().get_created_at();
+		community_data_json["updated_at"] = user.get()->get_community().value().get_updated_at();
+
+		user_data["community"] = crow::json::wvalue(community_data_json);
 
 		crow::json::wvalue data{ {"user", user_data} };
 		res.code = 200;
@@ -61,7 +75,6 @@ void UserController::get_user_by_id(pqxx::connection& db, const crow::request& r
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
 		handle_error(res, "invalid id", 400);
 	}
-
 	catch (const data_not_found_exception& e) {
 		CROW_LOG_ERROR << "Data not found exception: " << e.what();
 		handle_error(res, e.what(), 404);
@@ -118,23 +131,28 @@ void UserController::update_user_by_id(pqxx::connection& db, const crow::request
 						return;
 					}
 				}
-				bool succes = UserModel::update_user_admin(db, user_id, temp_name, temp_balance);
-				if (succes) {
-					res.code = 200;
-					crow::json::wvalue response_message;
-					response_message["message"] = "User updated successfully";
-					res.write(response_message.dump());
-					res.end();
-				}
-				else
-					handle_error(res, "internal server error", 500);
+
+				UserModel::update_user_by_id(db, user_id, temp_name, "", "", temp_balance, true);
+				res.code = 200;
+				crow::json::wvalue response_message;
+				response_message["message"] = "User updated successfully";
+				res.write(response_message.dump());
+				res.end();
 			}
 			else {
-				handle_error(res, "not enough privileges", 403);
+				handle_error(res, "does not belong to your community", 403);
 			}
 		}
 		else
 			handle_error(res, "not enough privileges", 403);
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	}
+	catch (const update_exception& e) {
+		CROW_LOG_ERROR << "Update exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error update_user controller: " << e.what();
@@ -147,6 +165,7 @@ void UserController::update_self(pqxx::connection& db, const crow::request& req,
 		crow::json::rvalue update = crow::json::load(req.body);
 		std::string user_id = update["id"].s();
 		std::string temp_name = "", temp_pass = "", temp_email = "";
+		int temp_balance = -1;
 		if (update.has("username")) {
 			temp_name = update["username"].s();
 			if (!validate_username(temp_name, res)) return;
@@ -159,21 +178,34 @@ void UserController::update_self(pqxx::connection& db, const crow::request& req,
 			temp_pass = update["password"].s();
 			if (!validate_password(temp_pass, res)) return;
 		}
+		if (update.has("balance")) {
+			temp_balance = update["balance"].i();
+			if (temp_balance < 0) {
+				handle_error(res, "balance must be > 0", 400);
+				return;
+			}
+		}
 
 		std::string hash = "";
 		if (temp_pass != "")
-			hash = BCrypt::generateHash(temp_pass); 
-		std::cout << "hash -> " << hash << std::endl;
-		bool succes = UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash);
-		if (succes) {
-			res.code = 200;
-			crow::json::wvalue response_message;
-			response_message["message"] = "User updated successfully";
-			res.write(response_message.dump());
-			res.end();
-		}
-		else
-			handle_error(res, "internal server error", 500);
+			hash = BCrypt::generateHash(temp_pass);
+
+		UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash, temp_balance, true);
+
+		res.code = 200;
+		crow::json::wvalue response_message;
+		response_message["message"] = "User updated successfully";
+		res.write(response_message.dump());
+		res.end();
+
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	}
+	catch (const update_exception& e) {
+		CROW_LOG_ERROR << "Update exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error update_self controller: " << e.what();
@@ -190,18 +222,21 @@ void UserController::delete_self(pqxx::connection& db, const crow::request& req,
 			handle_error(res, "admin can't delete themselves", 403);
 		}
 
-		bool deleted = UserModel::delete_user_by_id(db, user_id);
+		UserModel::delete_user_by_id(db, user_id, true);
 
-		if (deleted) {
-			res.code = 200;
-			crow::json::wvalue response_message;
-			response_message["message"] = "user deleted successfully";
-			res.write(response_message.dump());
-			res.end();
-		}
-		else
-			handle_error(res, "user not found", 404);
-
+		res.code = 200;
+		crow::json::wvalue response_message;
+		response_message["message"] = "user deleted successfully";
+		res.write(response_message.dump());
+		res.end();
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	}
+	catch (const deletion_exception& e) {
+		CROW_LOG_ERROR << "Delete exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error delete_user controller: " << e.what();
@@ -223,6 +258,7 @@ void UserController::delete_user_by_id(pqxx::connection& db, const crow::request
 		}
 
 		std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id);
+
 		if (!user) {
 			handle_error(res, "user not found", 404);
 			return;
@@ -234,21 +270,24 @@ void UserController::delete_user_by_id(pqxx::connection& db, const crow::request
 		std::string admin_community = admin.get()->get_community_id();
 
 		if (user_community == admin_community) {
-			bool deleted = UserModel::delete_user_by_id(db, user_id);
-			if (deleted) {
-				res.code = 200;
-				crow::json::wvalue response_message;
-				response_message["message"] = "user deleted successfully";
-				res.write(response_message.dump());
-				res.end();
-			}
-			else
-				handle_error(res, "user not found", 404);
+			UserModel::delete_user_by_id(db, user_id, true);
+			res.code = 200;
+			crow::json::wvalue response_message;
+			response_message["message"] = "user deleted successfully";
+			res.write(response_message.dump());
+			res.end();
 		}
-
 		else {
 			handle_error(res, "not enough privileges", 403);
 		}
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	}
+	catch (const deletion_exception& e) {
+		CROW_LOG_ERROR << "Delete exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error delete_user_by_id controller: " << e.what();

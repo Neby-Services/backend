@@ -93,7 +93,7 @@ void AuthController::login_user(pqxx::connection& db, const crow::request& req, 
 			return;
 		}
 
-		const std::string encrypt_password = UserModel::get_password_by_email(db, email);
+		const std::string encrypt_password = UserModel::get_password_by_email(db, email, true);
 
 		std::string password = body["password"].s();
 
@@ -132,6 +132,14 @@ void AuthController::login_user(pqxx::connection& db, const crow::request& req, 
 			return;
 		}
 
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	}
+	catch (const data_not_found_exception& e) {
+		CROW_LOG_ERROR << "Data not found exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in login_user controller: " << e.what();
@@ -173,6 +181,10 @@ void AuthController::get_self(pqxx::connection& db, const crow::request& req, cr
 		res.write(data.dump());
 		res.end();
 
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
 	}
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in get_self controller: " << e.what();

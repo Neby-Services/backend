@@ -1,5 +1,5 @@
 #include <models/user_model.h>
- 
+
 UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at, std::optional<CommunityModel> community) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at), _community(community) {}
 
 std::string UserModel::get_id() const { return _id; }
@@ -37,17 +37,17 @@ std::unique_ptr<UserModel> UserModel::create_user(pqxx::connection& db, const st
 		result[0]["updated_at"].as<std::string>(), std::nullopt);
 }
 
-std::vector<std::unique_ptr<UserModel>> UserModel::get_users(pqxx::connection& db) {
-	std::vector<std::unique_ptr<UserModel>> all_users;
+std::vector<UserModel> UserModel::get_users_admin(pqxx::connection& db, const std::string& admin_community_id) {
+	std::vector<UserModel> all_users;
 
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec("SELECT id, community_id, username, email, type, balance, created_at, updated_at FROM users");
+	pqxx::result result = txn.exec_params("SELECT id, community_id, username, email, type, balance, created_at, updated_at FROM users WHERE community_id = $1", admin_community_id);
 
 	txn.commit();
 
 	for (const auto& row : result) {
-		all_users.push_back(std::make_unique<UserModel>(
+		all_users.push_back(UserModel(
 			row["id"].as<std::string>(),
 			row["community_id"].as<std::string>(),
 			row["username"].as<std::string>(),
@@ -62,16 +62,11 @@ std::vector<std::unique_ptr<UserModel>> UserModel::get_users(pqxx::connection& d
 }
 
 bool exists_user(pqxx::connection& db, const std::string& column, const std::string& value) {
-	try {
-		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params(std::format("SELECT id FROM users WHERE {} = $1", column), value);
-		txn.commit();
-		bool userExists = !result.empty() && !result[0][0].is_null();
-		return userExists;
-	}
-	catch (const std::exception& e) {
-		return false;
-	}
+	pqxx::work txn(db);
+	pqxx::result result = txn.exec_params(std::format("SELECT id FROM users WHERE {} = $1", column), value);
+	txn.commit();
+	bool userExists = !result.empty() && !result[0][0].is_null();
+	return userExists;
 }
 
 bool UserModel::exists_id(pqxx::connection& db, const std::string& id) {
@@ -122,7 +117,7 @@ std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& col
 		community
 	);
 }
- 
+
 std::unique_ptr<UserModel> UserModel::get_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 	return get_user(db, "id", id, throw_when_null);
 }
@@ -133,62 +128,96 @@ std::unique_ptr<UserModel> UserModel::get_user_by_email(pqxx::connection& db, co
 	return get_user(db, "email", email, throw_when_null);
 }
 
-std::string UserModel::get_password_by_email(pqxx::connection& db, const std::string& email) {
-	try {
-		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params("SELECT password FROM users WHERE email = $1", email);
-		txn.commit();
-		if (result.empty()) return "";
-		return result[0]["password"].as<std::string>();
+std::string UserModel::get_password_by_email(pqxx::connection& db, const std::string& email, bool throw_when_null) {
+	pqxx::work txn(db);
+	pqxx::result result = txn.exec_params("SELECT password FROM users WHERE email = $1", email);
+	txn.commit();
+	if (result.empty()) {
+		if (throw_when_null)
+			throw data_not_found_exception("user with email not found");
+		else return "";
 	}
-	catch (const std::exception& e) {
-		return "";
-	}
+	return result[0]["password"].as<std::string>();
 }
 
-bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id) {
-	try {
-		pqxx::work txn(db);
+bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 
-		pqxx::result result = txn.exec_params("DELETE FROM users WHERE id = $1 RETURNING id", id);
+	pqxx::work txn(db);
 
-		txn.commit();
+	pqxx::result result = txn.exec_params("DELETE FROM users WHERE id = $1 RETURNING id", id);
 
-		if (!result.empty() && !result[0][0].is_null()) return true;
+	txn.commit();
 
-		return false;
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw deletion_exception("nothing has been deleted, maybe no user found to delete");
+		else return false;
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to delete user: " << e.what() << std::endl;
-		return false;
-	}
+
+	return !result.empty() && !result[0][0].is_null();
 }
 
-bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password) {
-	try {
-		pqxx::work txn(db);
-		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
-		if (email != "") pqxx::result result = txn.exec_params("UPDATE users SET email = $1 WHERE id = $2", email, id);
-		if (password != "") pqxx::result result = txn.exec_params("UPDATE users SET password = $1 WHERE id = $2", password, id);
-		txn.commit();
-		return true;
+std::string join_user(const std::vector<std::string>& elements, const std::string& delimiter) {
+	std::ostringstream os;
+	auto it = elements.begin();
+	if (it != elements.end()) {
+		os << *it++;
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to update user: " << e.what() << std::endl;
-		return false;
-	}
+	while (it != elements.end()) {
+		os << delimiter << *it++;
+	} 
+	return os.str();
 }
 
-bool UserModel::update_user_admin(pqxx::connection& db, const std::string& id, const std::string username, const int balance) {
-	try {
-		pqxx::work txn(db);
-		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
-		if (!(balance < 0)) pqxx::result result = txn.exec_params("UPDATE users SET balance = $1 WHERE id = $2", balance, id);
-		txn.commit();
-		return true;
+bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password, int balance, bool throw_when_null) {
+
+	pqxx::work txn(db);
+
+	std::string query = "UPDATE users SET ";
+	std::vector<std::string> updates;
+	std::vector<std::string> params; // Store the actual parameters as strings
+
+	if (!username.empty()) {
+		updates.push_back("username = $" + std::to_string(updates.size() + 1));
+		params.push_back(username);
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to update user: " << e.what() << std::endl;
+	if (!email.empty()) {
+		updates.push_back("email = $" + std::to_string(updates.size() + 1));
+		params.push_back(email);
+	}
+	if (!password.empty()) {
+		updates.push_back("password = $" + std::to_string(updates.size() + 1));
+		params.push_back(password);
+	}
+	if (balance >= 0) { // Asegurarse de que el balance sea no negativo
+		updates.push_back("balance = $" + std::to_string(updates.size() + 1));
+		params.push_back(std::to_string(balance));
+	}
+
+	if (updates.empty()) {
+		// No hay nada que actualizar
 		return false;
 	}
+
+	// Construir la parte de SET de la consulta
+	query += join_user(updates, ", ") + " WHERE id = $" + std::to_string(updates.size() + 1);
+	params.push_back(id);
+
+	// Convert params to const char* array for exec_params
+	std::vector<const char*> c_params;
+	for (const auto& param : params) {
+		c_params.push_back(param.c_str());
+	}
+
+	// Ejecutar la consulta
+	pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(c_params));
+	txn.commit();
+
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw update_exception("nothing has been updated, maybe no user found to update");
+		else return false;
+	}
+
+	return true;
 }
