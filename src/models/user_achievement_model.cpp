@@ -26,7 +26,8 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_
 		if (result.empty()) {
 			if (throw_when_null) {
 				throw std::runtime_error("Failed to insert user achievement");
-			} else {
+			}
+			else {
 				continue;
 			}
 		}
@@ -44,7 +45,8 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_
 		if (achievement_result.empty()) {
 			if (throw_when_null) {
 				throw std::runtime_error("Failed to find achievement details");
-			} else {
+			}
+			else {
 				continue;
 			}
 		}
@@ -125,7 +127,7 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::get_use
 	return user_achievements;
 }
 
-std::unique_ptr<UserAchievementModel> UserAchievementModel::update_status_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::string& status, bool throw_when_null) {
+std::unique_ptr<UserAchievementModel> UserAchievementModel::update_status_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::string& status, bool throw_when_null){ 
 	pqxx::work txn(db);
 
 	std::string query = R"(
@@ -161,4 +163,10 @@ std::unique_ptr<UserAchievementModel> UserAchievementModel::update_status_by_id(
 	}
 
 	return nullptr;
+}
+
+void UserAchievementModel::update_user_balance(pqxx::connection& db, const std::string& user_id, int reward) {
+	pqxx::work txn(db);
+	txn.exec_params("UPDATE users SET balance = balance + $1 WHERE id = $2", reward, user_id);
+	txn.commit();
 }
