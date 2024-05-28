@@ -159,7 +159,11 @@ void UserController::update_self(pqxx::connection& db, const crow::request& req,
 			temp_pass = update["password"].s();
 			if (!validate_password(temp_pass, res)) return;
 		}
-		std::string hash = BCrypt::generateHash(temp_pass);
+
+		std::string hash = "";
+		if (temp_pass != "")
+			hash = BCrypt::generateHash(temp_pass); 
+		std::cout << "hash -> " << hash << std::endl;
 		bool succes = UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash);
 		if (succes) {
 			res.code = 200;
