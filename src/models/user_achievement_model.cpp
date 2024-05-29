@@ -26,8 +26,7 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_
 		if (result.empty()) {
 			if (throw_when_null) {
 				throw std::runtime_error("Failed to insert user achievement");
-			}
-			else {
+			} else {
 				continue;
 			}
 		}
@@ -45,8 +44,7 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_
 		if (achievement_result.empty()) {
 			if (throw_when_null) {
 				throw std::runtime_error("Failed to find achievement details");
-			}
-			else {
+			} else {
 				continue;
 			}
 		}
@@ -127,46 +125,49 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::get_use
 	return user_achievements;
 }
 
-std::unique_ptr<UserAchievementModel> UserAchievementModel::update_status_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::string& status, bool throw_when_null){ 
+
+
+std::unique_ptr<UserAchievementModel> UserAchievementModel::update_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::map<std::string, std::string>& fields, bool throw_when_null) {
+	if (fields.empty())
+		throw update_exception("nothing has been updated, there is no data to update");
+
 	pqxx::work txn(db);
 
-	std::string query = R"(
-        UPDATE user_achievements AS ua
-		SET status = $1
-		FROM achievements AS a
-		WHERE ua.achievement_title = a.title
-		AND ua.id = $2
-		RETURNING ua.*, a.*
-    )";
+	std::vector<std::string> set_clauses;
+	std::vector<std::string> params;
+	int param_count = 1;
 
-	pqxx::result result = txn.exec_params(query, status, user_achievement_id);
-
-	txn.commit();
-
-	if (result.empty() && throw_when_null)
-		throw data_not_found_exception("User achievement not found");
-
-	if (!result.empty()) {
-		auto row = result.front();
-
-		std::string id = row["id"].as<std::string>();
-		std::string user_id = row["user_id"].as<std::string>();
-		std::string achievement_title = row["achievement_title"].as<std::string>();
-		std::string new_status = row["status"].as<std::string>();
-		std::string achievement_title_db = row["title"].as<std::string>();
-		std::string description = row["description"].as<std::string>();
-		int reward = row["reward"].as<int>();
-
-		AchievementModel achievement(achievement_title_db, description, reward);
-
-		return std::make_unique<UserAchievementModel>(id, achievement_title, user_id, new_status, std::make_optional(achievement));
+	for (const auto& field : fields) {
+		set_clauses.push_back(field.first + " = $" + std::to_string(param_count++));
+		params.push_back(field.second);
 	}
 
-	return nullptr;
-}
+	std::string query = "UPDATE user_achievements SET " + join_query_update(set_clauses, ", ") + " WHERE id = $" + std::to_string(param_count) + " RETURNING ua.*, a.*";
 
-void UserAchievementModel::update_user_balance(pqxx::connection& db, const std::string& user_id, int reward) {
-	pqxx::work txn(db);
-	txn.exec_params("UPDATE users SET balance = balance + $1 WHERE id = $2", reward, user_id);
+	params.push_back(user_achievement_id);
+
+	pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(params));
+
 	txn.commit();
+
+	if (result.empty()) {
+		if (throw_when_null) {
+			throw data_not_found_exception("User achievement not found");
+		}
+		return nullptr;
+	}
+
+	auto row = result.front();
+
+	std::string id = row["id"].as<std::string>();
+	std::string user_id = row["user_id"].as<std::string>();
+	std::string achievement_title = row["achievement_title"].as<std::string>();
+	std::string new_status = row["status"].as<std::string>();
+	std::string achievement_title_db = row["title"].as<std::string>();
+	std::string description = row["description"].as<std::string>();
+	int reward = row["reward"].as<int>();
+
+	AchievementModel achievement(achievement_title_db, description, reward);
+
+	return std::make_unique<UserAchievementModel>(id, achievement_title, user_id, new_status, std::make_optional(achievement));
 }

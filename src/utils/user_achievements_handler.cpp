@@ -48,9 +48,12 @@ void UserAchievementsHandler::handle_achievement_one(const std::string& user_id,
 		{"s.type", ServiceType::OFFERED}};
 
 	std::vector<ServiceModel> services = ServiceModel::get_services(*conn.get(), get_services_filters);
- 
+
 	if (services.size() >= 5) {
-		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+		std::map<std::string, std::string> fields = {
+			{"status", AchievementStatus::COMPLETED}};
+
+		UserAchievementModel::update_by_id(*conn.get(), user_achievement_id, fields, true);
 	}
 	pool.release_connection(conn);
 }
@@ -66,7 +69,10 @@ void UserAchievementsHandler::handle_achievement_two(const std::string& user_id,
 	std::vector<ServiceModel> services = ServiceModel::get_services(*conn.get(), get_services_filters);
 
 	if (services.size() >= 5) {
-		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+		std::map<std::string, std::string> fields = {
+			{"status", AchievementStatus::COMPLETED}};
+
+		UserAchievementModel::update_by_id(*conn.get(), user_achievement_id, fields, true);
 	}
 	pool.release_connection(conn);
 }
@@ -83,7 +89,10 @@ void UserAchievementsHandler::handle_achievement_three(const std::string& user_i
 
 	if (services.size() >= 1) {
 		CROW_LOG_INFO << "achievement completed!";
-		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+		std::map<std::string, std::string> fields = {
+			{"status", AchievementStatus::COMPLETED}};
+
+		UserAchievementModel::update_by_id(*conn.get(), user_achievement_id, fields, true);
 	}
 	pool.release_connection(conn);
 }
@@ -94,7 +103,10 @@ void UserAchievementsHandler::handle_achievement_four(const std::string& user_id
 
 	std::vector<ServiceModel> services = ServiceModel::get_services_sold_by_creator_id(*conn.get(), user_id);
 	if (services.size() >= 5) {
-		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+		std::map<std::string, std::string> fields = {
+			{"status", AchievementStatus::COMPLETED}};
+
+		UserAchievementModel::update_by_id(*conn.get(), user_achievement_id, fields, true);
 	}
 	pool.release_connection(conn);
 }
@@ -105,7 +117,10 @@ void UserAchievementsHandler::handle_achievement_five(const std::string& user_id
 
 	std::vector<NotificationServiceModel> notifications = NotificationServiceModel::get_notifications_accepted_self(*conn.get(), user_id);
 	if (notifications.size() >= 5) {
-		UserAchievementModel::update_status_by_id(*conn.get(), user_achievement_id, AchievementStatus::COMPLETED);
+		std::map<std::string, std::string> fields = {
+			{"status", AchievementStatus::COMPLETED}};
+
+		UserAchievementModel::update_by_id(*conn.get(), user_achievement_id, fields, true);
 	}
 	pool.release_connection(conn);
 }
