@@ -28,9 +28,6 @@ class CommunityModel {
 
 	static std::unique_ptr<CommunityModel> create_community(pqxx::connection& db, const std::string& name, bool throw_when_null = false);
 
-	static bool exists_name(pqxx::connection& db, const std::string& name);
-	static bool exists_code(pqxx::connection& db, const std::string& code);
-
 	static std::unique_ptr<CommunityModel> get_community_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
 	static std::unique_ptr<CommunityModel> get_community_by_code(pqxx::connection& db, const std::string& code, bool throw_when_null = false);
 };
