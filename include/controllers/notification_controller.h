@@ -7,6 +7,7 @@
 #include <models/user_model.h>
 #include <utils/common.h>
 #include <utils/utils.h>
+#include <map>
 #include <format>
 #include <memory>
 #include <pqxx/pqxx>

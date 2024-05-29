@@ -10,7 +10,7 @@
 #include <vector>
 
 class ServiceModel {
-	private:
+private:
 	std::string _id;
 	std::string _creator_id;
 	std::optional<std::string> _buyer_id;
@@ -25,7 +25,7 @@ class ServiceModel {
 	std::string _created_at;
 	std::string _updated_at;
 
-	public:
+public:
 	ServiceModel(std::string id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::optional<UserModel> creator, std::optional<UserModel> buyer, std::string created_at, std::string updated_at);
 
 	std::string get_id() const;
@@ -54,11 +54,11 @@ class ServiceModel {
 
 	static std::unique_ptr<ServiceModel> delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null = false);
 
-	static bool update_service_by_id(pqxx::connection& db, const std::string id, const std::string tittle, const std::string description, const int price);
+	static bool update_service_by_id(pqxx::connection& db, const std::string id, const std::string title = "", const std::string description = "", const std::string& buyer_id = "", const std::string& status = "", const std::string& type = "", const std::string& image_url = "", const int price = -1, bool throw_when_null = false); 
 
 	static bool close_service(pqxx::connection& db, const std::string& service_id);
 
 	static bool add_buyer(pqxx::connection& db, const std::string& service_id, const std::string& buyer_id);
 
-	static std::vector<std::unique_ptr<ServiceModel>> get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id); 
+	static std::vector<std::unique_ptr<ServiceModel>> get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id);
 };

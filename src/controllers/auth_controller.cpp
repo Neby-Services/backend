@@ -2,7 +2,7 @@
 
 void AuthController::register_user(pqxx::connection& db, const crow::request& req, crow::response& res) {
 	try {
-		if (!is_correct_body_register(req, res)) return; 
+		if (!is_correct_body_register(req, res)) return;
 
 		crow::json::rvalue body = crow::json::load(req.body);
 

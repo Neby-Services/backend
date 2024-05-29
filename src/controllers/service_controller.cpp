@@ -345,11 +345,10 @@ void ServiceController::update_service(pqxx::connection& db, const crow::request
 
 		std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id, false);
 
-		if (service == nullptr) {
+		if (!service) {
 			handle_error(res, "service not found", 404);
 			return;
 		}
-
 
 		std::string service_creator_id = service.get()->get_creator_id();
 
@@ -387,7 +386,7 @@ void ServiceController::update_service(pqxx::connection& db, const crow::request
 				}
 			}
 
-			bool updated_service = ServiceModel::update_service_by_id(db, service_id, temp_tittle, temp_description, temp_price);
+			bool updated_service = ServiceModel::update_service_by_id(db, service_id, temp_tittle, temp_description, "", "", "", "", temp_price);
 			if (updated_service) {
 				crow::json::wvalue message({ {"message", "service updated succesfully"} });
 				res.write(message.dump());
