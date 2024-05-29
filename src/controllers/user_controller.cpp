@@ -79,7 +79,6 @@ void UserController::get_user_by_id(pqxx::connection& db, const crow::request& r
 		CROW_LOG_ERROR << "Data not found exception: " << e.what();
 		handle_error(res, e.what(), 404);
 	}
-
 	catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error get_user_by_id controller: " << e.what();
 		handle_error(res, e.what(), 500);

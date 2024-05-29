@@ -27,13 +27,18 @@ void UserAchievementController::get_user_achievements_self(pqxx::connection& db,
 			user_achievements_json.push_back(user_achievement);
 		}
 
-		crow::json::wvalue data{ {"user_achievements", user_achievements_json} };
+		crow::json::wvalue data{{"user_achievements", user_achievements_json}};
 
 		res.code = 200;
 		res.write(data.dump());
 		res.end();
-	}
-	catch (const std::exception& e) {
+	} catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	} catch (const data_not_found_exception& e) {
+		CROW_LOG_ERROR << "Data not found exception: " << e.what();
+		handle_error(res, e.what(), 404);
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in get_user_achievements_self: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
@@ -45,21 +50,39 @@ void UserAchievementController::claim_user_achievement(pqxx::connection& db, cro
 
 		std::string user_id = body["id"].s();
 
-		std::unique_ptr<UserAchievementModel> updated_achievement = UserAchievementModel::update_status_by_id(db, arch_id, "claimed", true);
+		std::map<std::string, std::string> fields = {
+			{"status", AchievementStatus::COMPLETED}};
 
-		if (updated_achievement) {
+		std::unique_ptr<UserAchievementModel> updated_achievement = UserAchievementModel::update_by_id(db, arch_id, fields, true);
+
+		if (!updated_achievement && updated_achievement->get_achievement().value().get_reward() > 0) {
 			int reward = updated_achievement->get_achievement().value().get_reward();
 
-			UserAchievementModel::update_user_balance(db, user_id, reward);
-			res.code = 200;
-		}
-		else {
+			std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id, true);
 
-			handle_error(res, "error updating", 404);
+			std::map<std::string, std::string> user_update_data = {
+				{"balance", std::to_string(reward + user.get()->get_balance())}};
+
+			UserModel::update_user_by_id(db, user_id, user_update_data, true);
+
+			res.code = 200;
+			crow::json::wvalue response_message;
+			response_message["message"] = "Achievement claimed successfully";
+			res.write(response_message.dump());
+			res.end();
+		} else {
+			handle_error(res, "reward no positive number", 400);
 		}
-		res.end();
-	}
-	catch (const std::exception& e) {
+	} catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	} catch (const data_not_found_exception& e) {
+		CROW_LOG_ERROR << "Data not found exception: " << e.what();
+		handle_error(res, e.what(), 404);
+	} catch (const update_exception& e) {
+		CROW_LOG_ERROR << "Update exception: " << e.what();
+		handle_error(res, e.what(), 404);
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in claim_user_achievement: " << e.what();
 		handle_error(res, "internal server error", 500);
 	}
