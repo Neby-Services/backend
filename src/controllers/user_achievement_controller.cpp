@@ -38,3 +38,29 @@ void UserAchievementController::get_user_achievements_self(pqxx::connection& db,
 		handle_error(res, "internal server error", 500);
 	}
 }
+
+void UserAchievementController::claim_user_achievement(pqxx::connection& db, crow::request& req, crow::response& res, const std::string& arch_id) {
+	try {
+		crow::json::rvalue body = crow::json::load(req.body);
+
+		std::string user_id = body["id"].s();
+
+		std::unique_ptr<UserAchievementModel> updated_achievement = UserAchievementModel::update_status_by_id(db, arch_id, "claimed", true);
+
+		if (updated_achievement) {
+			int reward = updated_achievement->get_achievement().value().get_reward();
+
+			UserAchievementModel::update_user_balance(db, user_id, reward);
+			res.code = 200;
+		}
+		else {
+
+			handle_error(res, "error updating", 404);
+		}
+		res.end();
+	}
+	catch (const std::exception& e) {
+		CROW_LOG_ERROR << "Error in claim_user_achievement: " << e.what();
+		handle_error(res, "internal server error", 500);
+	}
+}
