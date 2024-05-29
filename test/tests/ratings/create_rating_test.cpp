@@ -17,7 +17,7 @@ status_code = 401
 TEST(CreateRatingAuth, create_rating_not_auth) {
 	std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/2";
 
-	auto response = cpr::Post(cpr::Url{url});
+	auto response = cpr::Post(cpr::Url{ url });
 	EXPECT_EQ(response.status_code, 404);
 	auto json = nlohmann::json::parse(response.text);
 	EXPECT_TRUE(json.contains("error"));
@@ -32,11 +32,11 @@ res.body = 'invalid UUID format';
 
 */
 class CreateRatingInvalidUUID : public testing::Test {
-    protected:
-    std::string _admin_token_;
-    std::string _admin_id_;
+protected:
+	std::string _admin_token_;
+	std::string _admin_id_;
 
-    void register_admin() {
+	void register_admin() {
 		std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 		nlohmann::json new_user = {
@@ -44,9 +44,9 @@ class CreateRatingInvalidUUID : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -57,7 +57,8 @@ class CreateRatingInvalidUUID : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 
@@ -65,19 +66,19 @@ class CreateRatingInvalidUUID : public testing::Test {
 		_admin_id_ = json["id"];
 	}
 
-    void SetUp() override {
-        register_admin();
-    }
+	void SetUp() override {
+		register_admin();
+	}
 
-    void TearDown() override {
-        clean_community_table();
-        clean_user_table();
-    }
+	void TearDown() override {
+		clean_community_table();
+		clean_user_table();
+	}
 };
 
 TEST_F(CreateRatingInvalidUUID, create_rating_invalid_UUID) {
-    std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/vesasaber"  ;
-	auto response = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/vesasaber";
+	auto response = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for invalid UUID format: ";
@@ -86,9 +87,9 @@ TEST_F(CreateRatingInvalidUUID, create_rating_invalid_UUID) {
 }
 
 TEST_F(CreateRatingInvalidUUID, create_rating_no_body) {
-    std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/75b7a53a-e207-4d68-8d57-57a6c9393732"  ;
-        
-	auto response = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Header{{"Content-Type", "application/json"}});
+	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/75b7a53a-e207-4d68-8d57-57a6c9393732";
+
+	auto response = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 404) << "Expected 404 status code for missing rating field: ";
@@ -99,22 +100,22 @@ TEST_F(CreateRatingInvalidUUID, create_rating_no_body) {
 TEST_F(CreateRatingInvalidUUID, create_rating_service_not_found) {
 
 	std::string create_service_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
-    nlohmann::json new_service = {
-        {"title", "nodeberiaexistir"},
-        {"description", "some description 555555555"},
-        {"price", 40},
-        {"type", "offered"} };
-    auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
-    auto s_json = nlohmann::json::parse(s_create.text);
-    std::string _service_id_ = s_json["id"];
+	nlohmann::json new_service = {
+		{"title", "nodeberiaexistir"},
+		{"description", "some description 555555555"},
+		{"price", 40},
+		{"type", "offered"} };
+	auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
+	auto s_json = nlohmann::json::parse(s_create.text);
+	std::string _service_id_ = s_json["id"];
 
 
-    std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/75b7a53a-e207-4d68-8d57-57a6c9393732"  ;
+	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/75b7a53a-e207-4d68-8d57-57a6c9393732";
 
-    nlohmann::json new_rating = {
-        {"rating", "9"} };
+	nlohmann::json new_rating = {
+		{"rating", "9"} };
 
-	auto response = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
+	auto response = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_rating.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 404) << "Expected 404 status code for service not found: ";
@@ -123,23 +124,23 @@ TEST_F(CreateRatingInvalidUUID, create_rating_service_not_found) {
 }
 
 TEST_F(CreateRatingInvalidUUID, create_rating_service_not_closed) {
-    std::string create_service_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
-    nlohmann::json new_service = {
-        {"title", "nodeberiaexistir"},
-        {"description", "some description 555555555"},
-        {"price", 40},
-        {"type", "offered"} };
-    auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
-    auto s_json = nlohmann::json::parse(s_create.text);
-    std::string _service_id_ = s_json["id"];
+	std::string create_service_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
+	nlohmann::json new_service = {
+		{"title", "nodeberiaexistir"},
+		{"description", "some description 555555555"},
+		{"price", 40},
+		{"type", "offered"} };
+	auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
+	auto s_json = nlohmann::json::parse(s_create.text);
+	std::string _service_id_ = s_json["id"];
 
 
-    std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
+	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_;
 
-    nlohmann::json new_rating = {
-        {"rating", "9"} };
+	nlohmann::json new_rating = {
+		{"rating", "9"} };
 
-	auto response = cpr::Post(cpr::Url{url_service}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
+	auto response = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_rating.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 400) << "Expected 400 status code for service not closed: ";
@@ -148,15 +149,15 @@ TEST_F(CreateRatingInvalidUUID, create_rating_service_not_closed) {
 }
 
 class CreateRatingCorrect : public testing::Test {
-    protected:
-    std::string _service_id_;
+protected:
+	std::string _service_id_;
 	std::string _neighbor_token_;
 	std::string _admin_token_;
 	std::string _admin_id_;
 	std::string _neighbor_id_;
 	std::string _community_id_;
 
-    void register_admin() {
+	void register_admin() {
 		std::string url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/auth/register";
 
 		nlohmann::json new_user = {
@@ -164,9 +165,9 @@ class CreateRatingCorrect : public testing::Test {
 			{"username", "example"},
 			{"password", "P@ssw0rd!"},
 			{"type", "admin"},
-			{"community_name", "example_community_name"}};
+			{"community_name", "example_community_name"} };
 
-		auto response = cpr::Post(cpr::Url{url}, cpr::Body{new_user.dump()}, cpr::Header{{"Content-Type", "application/json"}});
+		auto response = cpr::Post(cpr::Url{ url }, cpr::Body{ new_user.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 		std::string set_cookie_header = response.header["Set-Cookie"];
 
@@ -177,7 +178,8 @@ class CreateRatingCorrect : public testing::Test {
 			std::string token_value = set_cookie_header.substr(token_start, token_end - token_start);
 
 			_admin_token_ = token_value;
-		} else {
+		}
+		else {
 			_admin_token_ = "";
 		}
 
@@ -213,10 +215,10 @@ class CreateRatingCorrect : public testing::Test {
 		_neighbor_id_ = json["id"];
 	}
 
-    void SetUp() override {
-        register_admin();
+	void SetUp() override {
+		register_admin();
 
-				pqxx::connection conn(connection_string);
+		pqxx::connection conn(connection_string);
 
 		if (conn.is_open()) {
 			try {
@@ -239,14 +241,14 @@ class CreateRatingCorrect : public testing::Test {
 		register_neighbor(_community_id_);
 
 		std::string create_service_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/services";
-    	nlohmann::json new_service = {
-    	    {"title", "nodeberiaexistir"},
-    	    {"description", "some description 555555555"},
-    	    {"price", 40},
-    	    {"type", "requested"} };
-    	auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
-    	auto s_json = nlohmann::json::parse(s_create.text);
-    	_service_id_ = s_json["id"];
+		nlohmann::json new_service = {
+			{"title", "nodeberiaexistir"},
+			{"description", "some description 555555555"},
+			{"price", 40},
+			{"type", "requested"} };
+		auto s_create = cpr::Post(cpr::Url{ create_service_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_service.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
+		auto s_json = nlohmann::json::parse(s_create.text);
+		_service_id_ = s_json["id"];
 	}
 
 	void TearDown() override {
@@ -262,13 +264,14 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 	auto n_json = nlohmann::json::parse(n_create.text);
 	std::string _notification_id_ = n_json["notification_service"]["id"];
 
-	std::string n_accept_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification_id_ + "?action=accepted" ;
+	std::string n_accept_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification_id_ + "?action=accepted";
 	auto n_accept = cpr::Put(cpr::Url{ n_accept_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
-	
-    std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
-    nlohmann::json new_rating = {
-        {"rating", "9"} };
-	auto response = cpr::Post(cpr::Url{url_rating}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
+
+
+	std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_;
+	nlohmann::json new_rating = {
+		{"rating", "9"} };
+	auto response = cpr::Post(cpr::Url{ url_rating }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_rating.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for rating ccreated succesfully: ";

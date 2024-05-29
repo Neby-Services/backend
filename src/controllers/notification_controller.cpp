@@ -3,7 +3,7 @@
 void NotificationController::create_notification(pqxx::connection& db, const crow::request& req, crow::response& res) {
 	try {
 		auto notification_type = req.url_params.get("type");
- 
+
 		if (!notification_type) {
 			handle_error(res, "string query param (type) not provided", 400);
 			return;
@@ -231,31 +231,57 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 			updated_notification = NotificationServiceModel::handle_notification_status(db, NotificationServicesStatus::REFUSED, notification_id, true);
 		}
 		else {
-			std::unique_ptr<UserModel> notificationCreator = UserModel::get_user_by_id(db, notification.get()->get_sender_id());
-			std::unique_ptr<UserModel> serviceCreator = UserModel::get_user_by_id(db, service.get()->get_creator_id());
+			std::unique_ptr<UserModel> notification_creator = UserModel::get_user_by_id(db, notification.get()->get_sender_id());
+			std::unique_ptr<UserModel> service_creator = UserModel::get_user_by_id(db, service.get()->get_creator_id());
 
 			if (service.get()->get_type() == ServiceType::OFFERED) {
-				if (notificationCreator.get()->get_balance() < service.get()->get_price()) {
+				if (notification_creator.get()->get_balance() < service.get()->get_price()) {
 					handle_error(res, "notification sender does not have enough coins to pay for the service", 400);
 					return;
 				}
 				else {
-					int new_sender_balance = notificationCreator.get()->get_balance() - service.get()->get_price();
-					int new_creator_balance = serviceCreator.get()->get_balance() + service.get()->get_price();
-					UserModel::update_user_by_id(db, notificationCreator.get()->get_id(), notificationCreator.get()->get_username(), "", "", new_sender_balance, true);
-					UserModel::update_user_by_id(db, serviceCreator.get()->get_id(), serviceCreator.get()->get_username(), "", "", new_creator_balance, true);
+					int new_sender_balance = notification_creator.get()->get_balance() - service.get()->get_price();
+
+					std::map<std::string, std::string> sender_update_data = {
+						{"username", notification_creator.get()->get_username()},
+						{"balance", std::to_string(new_sender_balance)}
+					};
+
+					UserModel::update_user_by_id(db, notification_creator.get()->get_id(), sender_update_data, true);
+
+					int new_creator_balance = service_creator.get()->get_balance() + service.get()->get_price();
+
+					std::map<std::string, std::string> creator_update_data = {
+						{"username", service_creator.get()->get_username()},
+						{"balance", std::to_string(new_creator_balance)}
+					};
+
+					UserModel::update_user_by_id(db, service_creator.get()->get_id(), creator_update_data, true);
 				}
 			}
 			else {
-				if (serviceCreator.get()->get_balance() < service.get()->get_price()) {
+				if (service_creator.get()->get_balance() < service.get()->get_price()) {
 					handle_error(res, "you don't have the coins to pay for this request", 400);
 					return;
 				}
 				else {
-					int new_sender_balance = notificationCreator.get()->get_balance() + service.get()->get_price();
-					int new_creator_balance = serviceCreator.get()->get_balance() - service.get()->get_price();
-					UserModel::update_user_by_id(db, notificationCreator.get()->get_id(), notificationCreator.get()->get_username(), "", "", new_sender_balance, true);
-					UserModel::update_user_by_id(db, serviceCreator.get()->get_id(), serviceCreator.get()->get_username(), "", "", new_creator_balance, true);
+					int new_sender_balance = notification_creator.get()->get_balance() + service.get()->get_price();
+
+					std::map<std::string, std::string> sender_update_data = {
+						{"username", notification_creator.get()->get_username()},
+						{"balance", std::to_string(new_sender_balance)}
+					};
+
+					UserModel::update_user_by_id(db, notification_creator.get()->get_id(), sender_update_data, true);
+
+					int new_creator_balance = service_creator.get()->get_balance() - service.get()->get_price();
+
+					std::map<std::string, std::string> creator_update_data = {
+						{"username", service_creator.get()->get_username()},
+						{"balance", std::to_string(new_creator_balance)}
+					};
+
+					UserModel::update_user_by_id(db, service_creator.get()->get_id(), creator_update_data, true);
 				}
 			}
 			updated_notification = NotificationServiceModel::handle_notification_status(db, NotificationServicesStatus::ACCEPTED, notification_id, true);

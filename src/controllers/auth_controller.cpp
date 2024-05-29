@@ -25,11 +25,7 @@ void AuthController::register_user(pqxx::connection& db, const crow::request& re
 		}
 
 		if (type == Roles::ADMIN) {
-			std::unique_ptr<CommunityModel> community = CommunityModel::create_community(db, body["community_name"].s());
-			if (!community) {
-				handle_error(res, "internal server error", 500);
-				return;
-			}
+			std::unique_ptr<CommunityModel> community = CommunityModel::create_community(db, body["community_name"].s(), true);
 			community_id = community.get()->get_id();
 		}
 		else if (type == Roles::NEIGHBOR) {
@@ -70,6 +66,14 @@ void AuthController::register_user(pqxx::connection& db, const crow::request& re
 		res.code = 201;
 		res.write(data.dump());
 		res.end();
+	}
+	catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	}
+	catch (const creation_exception& e) {
+		CROW_LOG_ERROR << "Create exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	}
 	catch (const std::exception& e) {
 

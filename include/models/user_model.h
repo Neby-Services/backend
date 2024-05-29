@@ -7,6 +7,8 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
+#include <map>
+#include <db/utils.h> 
 #include <optional>
 #include <models/community_model.h>
 
@@ -49,6 +51,7 @@ public:
 	static std::string get_password_by_email(pqxx::connection& db, const std::string& email, bool throw_when_null = false);
 
 	static bool delete_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
-	static bool update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username = "", const std::string email = "", const std::string password = "", int balance = -1, bool throw_when_null = false);
-	
+
+	static bool update_user_by_id(pqxx::connection& db, const std::string& id, const std::map<std::string, std::string>& update_fields, bool throw_when_null); 
+
 };

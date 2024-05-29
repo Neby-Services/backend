@@ -89,6 +89,7 @@ void UserController::get_user_by_id(pqxx::connection& db, const crow::request& r
 void UserController::update_user_by_id(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& user_id) {
 	try {
 		crow::json::rvalue update = crow::json::load(req.body);
+
 		if (update["isAdmin"].b() == true) {
 			if (user_id.empty()) {
 				handle_error(res, "id must be provided", 400);
@@ -114,25 +115,30 @@ void UserController::update_user_by_id(pqxx::connection& db, const crow::request
 
 			if (user_community == admin_community) {
 				crow::json::rvalue update = crow::json::load(req.body);
-				std::string temp_name = "";
-				int temp_balance = -1;
+
+				std::map<std::string, std::string> user_update_data;
+
 				if (update.has("username")) {
-					temp_name = update["username"].s();
-					// validate username currently throws an error, so this return and error messages ar not being used
-					if (!validate_username(temp_name, res)) {
+					std::string username = update["username"].s();
+
+					if (!validate_username(username, res)) {
 						handle_error(res, "incorrect username", 400);
 						return;
 					};
+
+					user_update_data["username"] = username;
 				}
+
 				if (update.has("balance")) {
-					temp_balance = update["balance"].i();
-					if (temp_balance < 0) {
+					int balance = update["balance"].i();
+					if (balance < 0) {
 						handle_error(res, "invalid balance", 400);
 						return;
 					}
+					user_update_data["balance"] = std::to_string(balance);
 				}
 
-				UserModel::update_user_by_id(db, user_id, temp_name, "", "", temp_balance, true);
+				UserModel::update_user_by_id(db, user_id, user_update_data, true);
 				res.code = 200;
 				crow::json::wvalue response_message;
 				response_message["message"] = "User updated successfully";
@@ -164,33 +170,54 @@ void UserController::update_self(pqxx::connection& db, const crow::request& req,
 	try {
 		crow::json::rvalue update = crow::json::load(req.body);
 		std::string user_id = update["id"].s();
-		std::string temp_name = "", temp_pass = "", temp_email = "";
-		int temp_balance = -1;
+
+		std::map<std::string, std::string> user_update_data;
+
 		if (update.has("username")) {
-			temp_name = update["username"].s();
-			if (!validate_username(temp_name, res)) return;
+			std::string username = update["username"].s();
+
+			if (UserModel::exists_username(db, username)) {
+				handle_error(res, "username already in use", 400);
+				return;
+			} 
+
+			if (!validate_username(username, res)) return;
+
+			user_update_data["username"] = username;
 		}
+
 		if (update.has("email")) {
-			temp_email = update["email"].s();
-			if (!validate_email(temp_email, res)) return;
+			std::string email = update["email"].s();
+			if (UserModel::exists_email(db, email)) {
+				handle_error(res, "email already in use", 400);
+				return;
+			}
+			if (!validate_email(email, res)) return;
+
+			user_update_data["email"] = email;
 		}
-		if (update.has("password")) {
-			temp_pass = update["password"].s();
-			if (!validate_password(temp_pass, res)) return;
+		if (update.has("password")) { 
+			std::string password = update["password"].s();
+			if (!validate_password(password, res)) return;
+			user_update_data["password"] = BCrypt::generateHash(password);
 		}
 		if (update.has("balance")) {
-			temp_balance = update["balance"].i();
-			if (temp_balance < 0) {
+			int balance = update["balance"].i();
+
+			if (balance < 0) {
 				handle_error(res, "balance must be > 0", 400);
 				return;
 			}
+
+			user_update_data["balance"] = std::to_string(balance);
 		}
 
-		std::string hash = "";
-		if (temp_pass != "")
-			hash = BCrypt::generateHash(temp_pass);
+		if (user_update_data.size() == 0) {
+			handle_error(res, "there is no data to update", 400);
+			return;
+		}
 
-		UserModel::update_user_by_id(db, user_id, temp_name, temp_email, hash, temp_balance, true);
+		UserModel::update_user_by_id(db, user_id, user_update_data, true);
 
 		res.code = 200;
 		crow::json::wvalue response_message;

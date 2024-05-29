@@ -157,19 +157,9 @@ bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id, b
 	return !result.empty() && !result[0][0].is_null();
 }
 
-std::string join_user(const std::vector<std::string>& elements, const std::string& delimiter) {
-	std::ostringstream os;
-	auto it = elements.begin();
-	if (it != elements.end()) {
-		os << *it++;
-	}
-	while (it != elements.end()) {
-		os << delimiter << *it++;
-	} 
-	return os.str();
-}
 
-bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password, int balance, bool throw_when_null) {
+
+/* bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password, int balance, bool throw_when_null) {
 
 	pqxx::work txn(db);
 
@@ -200,7 +190,7 @@ bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, c
 	}
 
 	// Construir la parte de SET de la consulta
-	query += join_user(updates, ", ") + " WHERE id = $" + std::to_string(updates.size() + 1);
+	query += join_query_update(updates, ", ") + " WHERE id = $" + std::to_string(updates.size() + 1);
 	params.push_back(id);
 
 	// Convert params to const char* array for exec_params
@@ -220,4 +210,42 @@ bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, c
 	}
 
 	return true;
+} */
+bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::map<std::string, std::string>& update_fields, bool throw_when_null) {
+    if (update_fields.empty()) {
+        return false;
+    }
+
+    pqxx::work txn(db);
+
+    std::string query = "UPDATE users SET ";
+    std::vector<std::string> updates;
+    std::vector<std::string> params;
+
+    int param_index = 1;
+    for (const auto& field : update_fields) {
+        updates.push_back(field.first + " = $" + std::to_string(param_index++));
+        params.push_back(field.second);
+    }
+
+    query += join_query_update(updates, ", ") + " WHERE id = $" + std::to_string(param_index);
+    params.push_back(id);
+
+    // Convert params to const char* array for exec_params
+    std::vector<const char*> c_params;
+    for (const auto& param : params) {
+        c_params.push_back(param.c_str());
+    }
+
+    // Ejecutar la consulta
+    pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(c_params));
+    txn.commit();
+
+    if (result.affected_rows() == 0) {
+        if (throw_when_null)
+            throw update_exception("nothing has been updated, maybe no user found to update");
+        else return false;
+    }
+
+    return true;
 }

@@ -420,7 +420,7 @@ std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connectio
 	}
 }
 
-bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string id, const std::string tittle, const std::string description, const int price) {
+/* bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string id, const std::string tittle, const std::string description, const int price) {
 	try {
 		pqxx::work txn(db);
 		if (tittle != "") pqxx::result result = txn.exec_params("UPDATE services SET title = $1 WHERE id = $2", tittle, id);
@@ -433,17 +433,33 @@ bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string 
 		std::cerr << "Failed to update service: " << e.what() << std::endl;
 		return false;
 	}
+} */
+
+bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string id, const std::string title, const std::string description, const std::string& buyer_id, const std::string& status, const std::string& type, const std::string& image_url, const int price, bool throw_when_null) {
+	try {
+		pqxx::work txn(db);
+		if (title != "") pqxx::result result = txn.exec_params("UPDATE services SET title = $1 WHERE id = $2", title, id);
+		if (description != "") pqxx::result result = txn.exec_params("UPDATE services SET description = $1 WHERE id = $2", description, id);
+		if (!(price < 0)) pqxx::result result = txn.exec_params("UPDATE services SET price = $1 WHERE id = $2", price, id);
+		txn.commit();
+		return true;
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Failed to update service: " << e.what() << std::endl;
+		return false;
+	}
 }
 
 bool ServiceModel::close_service(pqxx::connection& db, const std::string& service_id) {
-	try {
+	try {  
 		pqxx::work txn(db);
 		pqxx::result result = txn.exec_params("UPDATE services SET status = $1 WHERE id = $2", ServiceStatus::CLOSED, service_id);
 		txn.commit();
 		return true;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "Failed to close service: " << e.what() << std::endl;
-		return false;		
+		return false;
 	}
 }
 
