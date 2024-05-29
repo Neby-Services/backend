@@ -287,17 +287,13 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 			updated_notification = NotificationServiceModel::handle_notification_status(db, NotificationServicesStatus::ACCEPTED, notification_id, true);
 
 			std::string service_id = updated_notification.get()->get_service_id();
-			bool success_add_buyer_service = ServiceModel::add_buyer(db, service_id, updated_notification.get()->get_sender_id());
-			if (!success_add_buyer_service) {
-				handle_error(res, "error in add buyer to service", 400);
-				return;
-			}
 
-			bool success_close_service = ServiceModel::close_service(db, service_id);
-			if (!success_close_service) {
-				handle_error(res, "error in close service", 400);
-				return;
-			}
+			std::map<std::string, std::string> service_update_data = {
+				{"status",  ServiceStatus::CLOSED},
+				{"buyer_id", updated_notification.get()->get_sender_id()}
+			};	 
+
+			ServiceModel::update_service_by_id(db, service_id, service_update_data, true);
 
 			bool succes_refused = NotificationServiceModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);
 

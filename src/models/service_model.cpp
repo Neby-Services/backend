@@ -27,7 +27,7 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 		if (isThrow)
 			throw creation_exception("service could not be created");
 		else
-			return nullptr;
+			return nullptr; 
 	}
 
 	std::optional<std::string> buyer_id_field;
@@ -374,93 +374,86 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx:
 }
 
 std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null) {
-	try {
-		pqxx::work txn(db);
+	pqxx::work txn(db);
 
-		pqxx::result result = txn.exec_params("DELETE FROM services WHERE id = $1 RETURNING *", id);
+	pqxx::result result = txn.exec_params("DELETE FROM services WHERE id = $1 RETURNING *", id);
 
-		txn.commit();
+	txn.commit();
 
-		if (result.empty()) {
-			if (throw_when_null)
-				throw data_not_found_exception("service not found");
-			else
-				return nullptr;
-		}
-
-		std::optional<std::string> buyer_id_field;
-		std::optional<std::string> image_url_field;
-		if (!result[0]["buyer_id"].is_null())
-			buyer_id_field = result[0]["buyer_id"].as<std::string>();
-		else
-			buyer_id_field = std::nullopt;
-		if (!result[0]["image_url"].is_null())
-			image_url_field = result[0]["image_url"].as<std::string>();
-		else
-			image_url_field = std::nullopt;
-
-		return std::make_unique<ServiceModel>(
-			result[0]["id"].as<std::string>(),
-			result[0]["creator_id"].as<std::string>(),
-			buyer_id_field,
-			result[0]["title"].as<std::string>(),
-			result[0]["description"].as<std::string>(),
-			result[0]["price"].as<int>(),
-			result[0]["status"].as<std::string>(),
-			result[0]["type"].as<std::string>(),
-			image_url_field,
-			std::nullopt,
-			std::nullopt,
-			result[0]["created_at"].as<std::string>(),
-			result[0]["updated_at"].as<std::string>());
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw update_exception("nothing has been deleted, maybe no user found to delete");
+		else return nullptr;
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to delete service: " << e.what() << std::endl;
-		return nullptr;
-	}
+
+	std::optional<std::string> buyer_id_field;
+	std::optional<std::string> image_url_field;
+	if (!result[0]["buyer_id"].is_null())
+		buyer_id_field = result[0]["buyer_id"].as<std::string>();
+	else
+		buyer_id_field = std::nullopt;
+	if (!result[0]["image_url"].is_null())
+		image_url_field = result[0]["image_url"].as<std::string>();
+	else
+		image_url_field = std::nullopt;
+
+	return std::make_unique<ServiceModel>(
+		result[0]["id"].as<std::string>(),
+		result[0]["creator_id"].as<std::string>(),
+		buyer_id_field,
+		result[0]["title"].as<std::string>(),
+		result[0]["description"].as<std::string>(),
+		result[0]["price"].as<int>(),
+		result[0]["status"].as<std::string>(),
+		result[0]["type"].as<std::string>(),
+		image_url_field,
+		std::nullopt,
+		std::nullopt,
+		result[0]["created_at"].as<std::string>(),
+		result[0]["updated_at"].as<std::string>());
 }
 
-/* bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string id, const std::string tittle, const std::string description, const int price) {
-	try {
-		pqxx::work txn(db);
-		if (tittle != "") pqxx::result result = txn.exec_params("UPDATE services SET title = $1 WHERE id = $2", tittle, id);
-		if (description != "") pqxx::result result = txn.exec_params("UPDATE services SET description = $1 WHERE id = $2", description, id);
-		if (!(price < 0)) pqxx::result result = txn.exec_params("UPDATE services SET price = $1 WHERE id = $2", price, id);
-		txn.commit();
-		return true;
-	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to update service: " << e.what() << std::endl;
-		return false;
-	}
-} */
 
-bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string id, const std::string title, const std::string description, const std::string& buyer_id, const std::string& status, const std::string& type, const std::string& image_url, const int price, bool throw_when_null) {
-	try {
-		pqxx::work txn(db);
-		if (title != "") pqxx::result result = txn.exec_params("UPDATE services SET title = $1 WHERE id = $2", title, id);
-		if (description != "") pqxx::result result = txn.exec_params("UPDATE services SET description = $1 WHERE id = $2", description, id);
-		if (!(price < 0)) pqxx::result result = txn.exec_params("UPDATE services SET price = $1 WHERE id = $2", price, id);
-		txn.commit();
-		return true;
+bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string& service_id, const std::map<std::string, std::string>& update_fields, bool throw_when_null) {
+	if (update_fields.empty()) {
+		if (throw_when_null)
+			throw update_exception("nothing has been updated, there is no data to update");
+		else
+			return false;
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to update service: " << e.what() << std::endl;
-		return false;
-	}
-}
 
-bool ServiceModel::close_service(pqxx::connection& db, const std::string& service_id) {
-	try {  
-		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params("UPDATE services SET status = $1 WHERE id = $2", ServiceStatus::CLOSED, service_id);
-		txn.commit();
-		return true;
+	pqxx::work txn(db);
+
+	std::string query = "UPDATE services SET ";
+	std::vector<std::string> updates;
+	std::vector<std::string> params;
+
+	int param_index = 1;
+	for (const auto& field : update_fields) {
+		updates.push_back(field.first + " = $" + std::to_string(param_index++));
+		params.push_back(field.second);
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to close service: " << e.what() << std::endl;
-		return false;
+
+	query += join_query_update(updates, ", ") + " WHERE id = $" + std::to_string(param_index);
+	params.push_back(service_id);
+
+	// Convert params to const char* array for exec_params
+	std::vector<const char*> c_params;
+	for (const auto& param : params) {
+		c_params.push_back(param.c_str());
 	}
+
+	// Ejecutar la consulta
+	pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(c_params));
+	txn.commit();
+
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw update_exception("nothing has been updated, maybe no user found to update");
+		else return false;
+	}
+
+	return true;
 }
 
 std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_type(pqxx::connection& db, const std::string& creator_id, const std::string& type) {
@@ -572,18 +565,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_ty
 	return all_services;
 }
 
-bool ServiceModel::add_buyer(pqxx::connection& db, const std::string& service_id, const std::string& buyer_id) {
-	try {
-		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params("UPDATE services SET buyer_id = $1 WHERE id = $2", buyer_id, service_id);
-		txn.commit();
-		return true;
-	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to update service: " << e.what() << std::endl;
-		return false;
-	}
-}
+
 
 std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id) {
 	try {
@@ -638,3 +620,4 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_sold_by_cr
 		return {};
 	}
 }
+ 
