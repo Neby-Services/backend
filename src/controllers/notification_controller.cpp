@@ -17,41 +17,33 @@ void NotificationController::create_notification(pqxx::connection& db, const cro
 		if (notification_type == NotificationType::SERVICES) {
 			NotificationController::create_service_notification(db, req, res);
 			return;
-		}
-		else if (notification_type == NotificationType::ACHIEVEMENTS) {
+		} else if (notification_type == NotificationType::ACHIEVEMENTS) {
 			res.code = 201;
 			res.body = "here handle achievements";
 			return;
-		}
-		else if (notification_type == NotificationType::REVIEWS) {
+		} else if (notification_type == NotificationType::REVIEWS) {
 			res.code = 201;
 			res.body = "here handle reviews";
 			return;
 		}
 
-
-	}
-	catch (const pqxx::data_exception& e) {
+	} catch (const pqxx::data_exception& e) {
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
 		handle_error(res, "invalid id", 400);
-	}
-	catch (const data_not_found_exception& e) {
+	} catch (const data_not_found_exception& e) {
 		CROW_LOG_ERROR << "Data not found exception: " << e.what();
 		handle_error(res, e.what(), 404);
-	}
-	catch (const creation_exception& e) {
+	} catch (const creation_exception& e) {
 		CROW_LOG_ERROR << "Create exception: " << e.what();
 		handle_error(res, e.what(), 404);
-	}
-	catch (const std::exception& e) {
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in create_notification controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
 	}
 }
 
-void NotificationController::create_service_notification(pqxx::connection& db, const  crow::request& req, crow::response& res) {
-	try
-	{
+void NotificationController::create_service_notification(pqxx::connection& db, const crow::request& req, crow::response& res) {
+	try {
 		//? get id that creates notification to get service
 		crow::json::rvalue body = crow::json::load(req.body);
 		int notifier_balance = body["request_balance"].i();
@@ -122,30 +114,23 @@ void NotificationController::create_service_notification(pqxx::connection& db, c
 		notification_json["updated_at"] = new_notification.get()->get_updated_at();
 		notification_json["notification_service"] = crow::json::wvalue(notification_service_json);
 
-
 		res.code = 201;
 		res.write(notification_json.dump());
 		res.end();
-	}
-	catch (const pqxx::data_exception& e) {
+	} catch (const pqxx::data_exception& e) {
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
 		handle_error(res, "invalid id", 400);
-	}
-	catch (const data_not_found_exception& e) {
+	} catch (const data_not_found_exception& e) {
 		CROW_LOG_ERROR << "Data not found exception: " << e.what();
 		handle_error(res, e.what(), 404);
-	}
-	catch (const std::exception& e)
-	{
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in create_service_notification controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
 	}
 }
 
-
 void NotificationController::get_notification_service_by_id(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id) {
-	try
-	{
+	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 		std::string request_id = body["id"].s();
 
@@ -175,17 +160,13 @@ void NotificationController::get_notification_service_by_id(pqxx::connection& db
 		res.write(notification_json.dump());
 
 		res.end();
-	}
-	catch (const pqxx::data_exception& e) {
+	} catch (const pqxx::data_exception& e) {
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
 		handle_error(res, "invalid id", 400);
-	}
-	catch (const std::exception& e)
-	{
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in get_notification_service_by_id controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
 	}
-
 }
 
 void NotificationController::handle_notification(pqxx::connection& db, crow::request& req, crow::response& res, const std::string& notification_id) {
@@ -229,8 +210,7 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 
 		if (action == NotificationServicesStatus::REFUSED) {
 			updated_notification = NotificationServiceModel::handle_notification_status(db, NotificationServicesStatus::REFUSED, notification_id, true);
-		}
-		else {
+		} else {
 			std::unique_ptr<UserModel> notification_creator = UserModel::get_user_by_id(db, notification.get()->get_sender_id());
 			std::unique_ptr<UserModel> service_creator = UserModel::get_user_by_id(db, service.get()->get_creator_id());
 
@@ -238,14 +218,12 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 				if (notification_creator.get()->get_balance() < service.get()->get_price()) {
 					handle_error(res, "notification sender does not have enough coins to pay for the service", 400);
 					return;
-				}
-				else {
+				} else {
 					int new_sender_balance = notification_creator.get()->get_balance() - service.get()->get_price();
 
 					std::map<std::string, std::string> sender_update_data = {
 						{"username", notification_creator.get()->get_username()},
-						{"balance", std::to_string(new_sender_balance)}
-					};
+						{"balance", std::to_string(new_sender_balance)}};
 
 					UserModel::update_user_by_id(db, notification_creator.get()->get_id(), sender_update_data, true);
 
@@ -253,24 +231,20 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 
 					std::map<std::string, std::string> creator_update_data = {
 						{"username", service_creator.get()->get_username()},
-						{"balance", std::to_string(new_creator_balance)}
-					};
+						{"balance", std::to_string(new_creator_balance)}};
 
 					UserModel::update_user_by_id(db, service_creator.get()->get_id(), creator_update_data, true);
 				}
-			}
-			else {
+			} else {
 				if (service_creator.get()->get_balance() < service.get()->get_price()) {
 					handle_error(res, "you don't have the coins to pay for this request", 400);
 					return;
-				}
-				else {
+				} else {
 					int new_sender_balance = notification_creator.get()->get_balance() + service.get()->get_price();
 
 					std::map<std::string, std::string> sender_update_data = {
 						{"username", notification_creator.get()->get_username()},
-						{"balance", std::to_string(new_sender_balance)}
-					};
+						{"balance", std::to_string(new_sender_balance)}};
 
 					UserModel::update_user_by_id(db, notification_creator.get()->get_id(), sender_update_data, true);
 
@@ -278,8 +252,7 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 
 					std::map<std::string, std::string> creator_update_data = {
 						{"username", service_creator.get()->get_username()},
-						{"balance", std::to_string(new_creator_balance)}
-					};
+						{"balance", std::to_string(new_creator_balance)}};
 
 					UserModel::update_user_by_id(db, service_creator.get()->get_id(), creator_update_data, true);
 				}
@@ -289,21 +262,16 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 			std::string service_id = updated_notification.get()->get_service_id();
 
 			std::map<std::string, std::string> service_update_data = {
-				{"status",  ServiceStatus::CLOSED},
-				{"buyer_id", updated_notification.get()->get_sender_id()}
-			};	 
+				{"status", ServiceStatus::CLOSED},
+				{"buyer_id", updated_notification.get()->get_sender_id()}};
 
 			ServiceModel::update_service_by_id(db, service_id, service_update_data, true);
 
-			bool succes_refused = NotificationServiceModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id);
+			NotificationServiceModel::refused_notifications(db, updated_notification.get()->get_service_id(), notification_id, true);
 
-			if (!succes_refused) {
-				handle_error(res, "error in refused other notifications", 400);
-				return;
-			}
 			//* Achievements to handle
 			std::vector<std::string> vec = {
-				AchievementsTitles::ACHIEVEMENT_FOUR, AchievementsTitles::ACHIEVEMENT_FIVE };
+				AchievementsTitles::ACHIEVEMENT_FOUR, AchievementsTitles::ACHIEVEMENT_FIVE};
 
 			set_new_body_prop(req, "tags", vec);
 			set_new_body_prop(req, "primary_user_id", request_id);
@@ -321,16 +289,14 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 		res.write(notification_service_json.dump());
 
 		res.end();
-	}
-	catch (const std::exception& e) {
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in handle_notification controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
 	}
 }
 
 void NotificationController::get_notifications(pqxx::connection& db, const crow::request& req, crow::response& res) {
-	try
-	{
+	try {
 		crow::json::rvalue body = crow::json::load(req.body);
 		std::string request_id = body["id"].s();
 
@@ -388,23 +354,19 @@ void NotificationController::get_notifications(pqxx::connection& db, const crow:
 			}
 
 			notifications_json.push_back(notification);
-
 		}
 
 		res.code = 200;
 
-		crow::json::wvalue data{ {"notifications", notifications_json} };
+		crow::json::wvalue data{{"notifications", notifications_json}};
 
 		res.write(data.dump());
 
 		res.end();
-	}
-	catch (const pqxx::data_exception& e) {
+	} catch (const pqxx::data_exception& e) {
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
 		handle_error(res, "invalid id", 400);
-	}
-	catch (const std::exception& e)
-	{
+	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in get_notification_service_by_id controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
 	}

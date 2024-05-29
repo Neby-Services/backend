@@ -157,60 +157,6 @@ bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id, b
 	return !result.empty() && !result[0][0].is_null();
 }
 
-
-
-/* bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password, int balance, bool throw_when_null) {
-
-	pqxx::work txn(db);
-
-	std::string query = "UPDATE users SET ";
-	std::vector<std::string> updates;
-	std::vector<std::string> params; // Store the actual parameters as strings
-
-	if (!username.empty()) {
-		updates.push_back("username = $" + std::to_string(updates.size() + 1));
-		params.push_back(username);
-	}
-	if (!email.empty()) {
-		updates.push_back("email = $" + std::to_string(updates.size() + 1));
-		params.push_back(email);
-	}
-	if (!password.empty()) {
-		updates.push_back("password = $" + std::to_string(updates.size() + 1));
-		params.push_back(password);
-	}
-	if (balance >= 0) { // Asegurarse de que el balance sea no negativo
-		updates.push_back("balance = $" + std::to_string(updates.size() + 1));
-		params.push_back(std::to_string(balance));
-	}
-
-	if (updates.empty()) {
-		// No hay nada que actualizar
-		return false;
-	}
-
-	// Construir la parte de SET de la consulta
-	query += join_query_update(updates, ", ") + " WHERE id = $" + std::to_string(updates.size() + 1);
-	params.push_back(id);
-
-	// Convert params to const char* array for exec_params
-	std::vector<const char*> c_params;
-	for (const auto& param : params) {
-		c_params.push_back(param.c_str());
-	}
-
-	// Ejecutar la consulta
-	pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(c_params));
-	txn.commit();
-
-	if (result.affected_rows() == 0) {
-		if (throw_when_null)
-			throw update_exception("nothing has been updated, maybe no user found to update");
-		else return false;
-	}
-
-	return true;
-} */
 bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::map<std::string, std::string>& update_fields, bool throw_when_null) {
 	if (update_fields.empty()) {
 		if (throw_when_null)

@@ -1,17 +1,17 @@
 #pragma once
 
 #include <models/user_model.h>
-#include <utils/errors.h>
 #include <utils/common.h>
+#include <utils/errors.h>
+#include <map>
 #include <memory>
 #include <optional>
 #include <pqxx/pqxx>
 #include <string>
-#include <map>
 #include <vector>
 
 class ServiceModel {
-private:
+	private:
 	std::string _id;
 	std::string _creator_id;
 	std::optional<std::string> _buyer_id;
@@ -26,7 +26,7 @@ private:
 	std::string _created_at;
 	std::string _updated_at;
 
-public:
+	public:
 	ServiceModel(std::string id, std::string creator_id, std::optional<std::string> buyer_id, std::string title, std::string description, int price, std::string status, std::string type, std::optional<std::string> image_url, std::optional<UserModel> creator, std::optional<UserModel> buyer, std::string created_at, std::string updated_at);
 
 	std::string get_id() const;
@@ -37,7 +37,7 @@ public:
 	int get_price() const;
 	std::string get_status() const;
 	std::string get_type() const;
-	std::optional<std::string> get_image_url() const;
+	std::optional<std::string> get_image_url() const;  
 	std::string get_created_at() const;
 	std::string get_updated_at() const;
 	std::optional<UserModel> get_creator() const;
@@ -45,17 +45,13 @@ public:
 
 	static std::unique_ptr<ServiceModel> create_service(pqxx::connection& db, const std::string& creator_id, const std::string& title, const std::string& description, const int price, const std::string& type, const std::optional<std::string>& image_url, bool isThrow = false);
 
-	static std::vector<std::unique_ptr<ServiceModel>> get_services(pqxx::connection& db, const std::string& community_id, const std::string& status = "");
+	static std::vector<ServiceModel> get_services(pqxx::connection& db, const std::map<std::string, std::string>& filters, bool throw_when_null = false);
+
+	static std::vector<ServiceModel> get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id, bool throw_when_null = false);
 
 	static std::unique_ptr<ServiceModel> get_service_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null = false);
 
-	static std::vector<std::unique_ptr<ServiceModel>> get_services_self(pqxx::connection& db, const std::string& creator_id, const std::string& status = "");
-
-	static std::vector<std::unique_ptr<ServiceModel>> get_services_self_by_type(pqxx::connection& db, const std::string& creator_id, const std::string& type = "");
+	static bool update_service_by_id(pqxx::connection& db, const std::string& service_id, const std::map<std::string, std::string>& update_fields, bool throw_when_null = false);
 
 	static std::unique_ptr<ServiceModel> delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null = false);
-
-	static std::vector<std::unique_ptr<ServiceModel>> get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id);
-
-	static bool update_service_by_id(pqxx::connection& db, const std::string& service_id, const std::map<std::string, std::string>& update_fields, bool throw_when_null);
 };

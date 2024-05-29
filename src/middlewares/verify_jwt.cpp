@@ -2,7 +2,7 @@
 
 void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& ctx) {
 	ConnectionPool pool(connection_string, 1);
-	auto conn = pool.getConnection();
+	auto conn = pool.get_connection();
 	std::string token = get_token_cookie(req);
 
 	if (token == "") {
@@ -31,7 +31,7 @@ void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& 
 		return;
 	}
 
-	pool.releaseConnection(conn);
+	pool.release_connection(conn);
 
 	if (req.body == "") {
 		crow::json::wvalue body;
@@ -46,8 +46,7 @@ void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& 
 		body["request_balance"] = user.get()->get_balance();
 
 		req.body = body.dump();
-	}
-	else {
+	} else {
 		crow::json::wvalue body = crow::json::load(req.body);
 
 		body["id"] = id;
