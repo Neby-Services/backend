@@ -7,6 +7,7 @@
 #include <optional>
 #include <pqxx/pqxx>
 #include <string>
+#include <map>
 #include <vector>
 
 class ServiceModel {
@@ -54,11 +55,7 @@ public:
 
 	static std::unique_ptr<ServiceModel> delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null = false);
 
-	static bool update_service_by_id(pqxx::connection& db, const std::string id, const std::string title = "", const std::string description = "", const std::string& buyer_id = "", const std::string& status = "", const std::string& type = "", const std::string& image_url = "", const int price = -1, bool throw_when_null = false); 
-
-	static bool close_service(pqxx::connection& db, const std::string& service_id);
-
-	static bool add_buyer(pqxx::connection& db, const std::string& service_id, const std::string& buyer_id);
-
 	static std::vector<std::unique_ptr<ServiceModel>> get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id);
+
+	static bool update_service_by_id(pqxx::connection& db, const std::string& service_id, const std::map<std::string, std::string>& update_fields, bool throw_when_null);
 };
