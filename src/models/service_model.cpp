@@ -27,7 +27,7 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 		if (isThrow)
 			throw creation_exception("service could not be created");
 		else
-			return nullptr; 
+			return nullptr;
 	}
 
 	std::optional<std::string> buyer_id_field;
@@ -57,8 +57,8 @@ std::unique_ptr<ServiceModel> ServiceModel::create_service(pqxx::connection& db,
 		result[0]["updated_at"].as<std::string>());
 }
 
-std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::connection& db, const std::string& community_id, const std::string& status) {
-	std::vector<std::unique_ptr<ServiceModel>> all_services;
+std::vector<ServiceModel> ServiceModel::get_services(pqxx::connection& db, const std::map<std::string, std::string>& filters, bool throw_when_null) {
+	std::vector<ServiceModel> all_services;
 
 	pqxx::work txn(db);
 
@@ -92,23 +92,29 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 		"ub.updated_at AS buyer_updated_at "
 		"FROM services AS s "
 		"JOIN users AS uc ON s.creator_id = uc.id "
-		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
-		"WHERE uc.community_id = $1 ";
+		"LEFT JOIN users AS ub ON s.buyer_id = ub.id ";
 
-	// Agregar filtro de status si se proporciona
-	if (!status.empty()) {
-		query += " AND s.status = $2";
+	std::vector<std::string> conditions;
+	std::vector<std::string> params;
+	int param_count = 1;
+
+	for (const auto& filter : filters) {
+		conditions.push_back(filter.first + " = $" + std::to_string(param_count++));
+		params.push_back(filter.second);
 	}
+
+	if (!conditions.empty()) {
+		query += " WHERE " + join_query_update(conditions, " AND ");
+	}
+
 	query += " ORDER BY s.updated_at DESC;";
-	pqxx::result result;
-	if (!status.empty()) {
-		result = txn.exec_params(query, community_id, status);
-	}
-	else {
-		result = txn.exec_params(query, community_id);
-	}
 
+	pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(params));
 	txn.commit();
+
+	if (result.empty() && throw_when_null) {
+		throw data_not_found_exception("services not found");
+	}
 
 	for (const auto& row : result) {
 		std::optional<std::string> buyer_id_field;
@@ -145,8 +151,7 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 				row["buyer_updated_at"].as<std::string>(), std::nullopt);
 		}
 
-
-		all_services.push_back(std::make_unique<ServiceModel>(
+		all_services.push_back(ServiceModel(
 			row["service_id"].as<std::string>(),
 			row["creator_id"].as<std::string>(),
 			buyer_id_field,
@@ -158,6 +163,56 @@ std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services(pqxx::conn
 			image_url_field,
 			creator,
 			buyer,
+			row["created_at"].as<std::string>(),
+			row["updated_at"].as<std::string>()));
+	}
+
+	return all_services;
+}
+
+std::vector<ServiceModel> ServiceModel::get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id, bool throw_when_null) {
+	std::vector<ServiceModel> all_services;
+
+	pqxx::work txn(db);
+
+	std::string query = R"(
+            SELECT *
+			FROM services
+			WHERE buyer_id IS NOT NULL 
+			AND creator_id = $1;
+        )";
+
+	pqxx::result result = txn.exec_params(query, creator_id);
+
+	txn.commit();
+
+	if (result.empty() && throw_when_null)
+		throw data_not_found_exception("services not found");
+
+	for (const auto& row : result) {
+		std::optional<std::string> buyer_id_field;
+		std::optional<std::string> image_url_field;
+		if (!row["buyer_id"].is_null())
+			buyer_id_field = row["buyer_id"].as<std::string>();
+		else
+			buyer_id_field = std::nullopt;
+		if (!row["image_url"].is_null())
+			image_url_field = row["image_url"].as<std::string>();
+		else
+			image_url_field = std::nullopt;
+
+		all_services.push_back(ServiceModel(
+			row["id"].as<std::string>(),
+			row["creator_id"].as<std::string>(),
+			buyer_id_field,
+			row["title"].as<std::string>(),
+			row["description"].as<std::string>(),
+			row["price"].as<int>(),
+			row["status"].as<std::string>(),
+			row["type"].as<std::string>(),
+			image_url_field,
+			std::nullopt,
+			std::nullopt,
 			row["created_at"].as<std::string>(),
 			row["updated_at"].as<std::string>()));
 	}
@@ -199,7 +254,8 @@ std::unique_ptr<ServiceModel> get_service(pqxx::connection& db, const std::strin
 		"FROM services AS s "
 		"JOIN users AS uc ON s.creator_id = uc.id "
 		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
-		"WHERE s." + column + " = $1";
+		"WHERE s." +
+		column + " = $1";
 
 	pqxx::result result = txn.exec_params(query, value);
 	txn.commit();
@@ -267,153 +323,6 @@ std::unique_ptr<ServiceModel> ServiceModel::get_service_by_id(pqxx::connection& 
 	return get_service(db, "id", id, throw_when_null);
 }
 
-std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self(pqxx::connection& db, const std::string& creator_id, const std::string& status) {
-	std::vector<std::unique_ptr<ServiceModel>> all_services;
-
-	pqxx::work txn(db);
-
-	std::string query =
-		"SELECT s.id AS service_id, "
-		"s.creator_id, "
-		"s.buyer_id, "
-		"s.title, "
-		"s.description, "
-		"s.price, "
-		"s.status, "
-		"s.type, "
-		"s.image_url, "
-		"s.created_at, "
-		"s.updated_at, "
-		"uc.id AS creator_id, "
-		"uc.community_id AS creator_community_id, "
-		"uc.username AS creator_username, "
-		"uc.email AS creator_email, "
-		"uc.type AS creator_type, "
-		"uc.balance AS creator_balance, "
-		"uc.created_at AS creator_created_at, "
-		"uc.updated_at AS creator_updated_at, "
-		"ub.id AS buyer_id, "
-		"ub.community_id AS buyer_community_id, "
-		"ub.username AS buyer_username, "
-		"ub.email AS buyer_email, "
-		"ub.type AS buyer_type, "
-		"ub.balance AS buyer_balance, "
-		"ub.created_at AS buyer_created_at, "
-		"ub.updated_at AS buyer_updated_at "
-		"FROM services AS s "
-		"JOIN users AS uc ON s.creator_id = uc.id "
-		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
-		"WHERE s.creator_id = $1";
-
-	if (!status.empty()) {
-		query += " AND s.status = $2";
-	}
-
-	pqxx::result result;
-	if (!status.empty()) {
-		result = txn.exec_params(query, creator_id, status);
-	}
-	else {
-		result = txn.exec_params(query, creator_id);
-	}
-
-	txn.commit();
-
-	for (const auto& row : result) {
-		std::optional<std::string> buyer_id_field;
-		std::optional<std::string> image_url_field;
-		if (!row["buyer_id"].is_null())
-			buyer_id_field = row["buyer_id"].as<std::string>();
-		else
-			buyer_id_field = std::nullopt;
-		if (!row["image_url"].is_null())
-			image_url_field = row["image_url"].as<std::string>();
-		else
-			image_url_field = std::nullopt;
-
-		UserModel creator(
-			row["creator_id"].as<std::string>(),
-			row["creator_community_id"].as<std::string>(),
-			row["creator_username"].as<std::string>(),
-			row["creator_email"].as<std::string>(),
-			row["creator_type"].as<std::string>(),
-			row["creator_balance"].as<int>(),
-			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>(), std::nullopt);
-
-		std::optional<UserModel> buyer = std::nullopt;
-		if (buyer_id_field) {
-			buyer = UserModel(
-				row["buyer_id"].as<std::string>(),
-				row["buyer_community_id"].as<std::string>(),
-				row["buyer_username"].as<std::string>(),
-				row["buyer_email"].as<std::string>(),
-				row["buyer_type"].as<std::string>(),
-				row["buyer_balance"].as<int>(),
-				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>(), std::nullopt);
-		}
-
-		all_services.push_back(std::make_unique<ServiceModel>(
-			row["service_id"].as<std::string>(),
-			row["creator_id"].as<std::string>(),
-			buyer_id_field,
-			row["title"].as<std::string>(),
-			row["description"].as<std::string>(),
-			row["price"].as<int>(),
-			row["status"].as<std::string>(),
-			row["type"].as<std::string>(),
-			image_url_field,
-			creator,
-			buyer,
-			row["created_at"].as<std::string>(),
-			row["updated_at"].as<std::string>()));
-	}
-
-	return all_services;
-}
-
-std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null) {
-	pqxx::work txn(db);
-
-	pqxx::result result = txn.exec_params("DELETE FROM services WHERE id = $1 RETURNING *", id);
-
-	txn.commit();
-
-	if (result.affected_rows() == 0) {
-		if (throw_when_null)
-			throw update_exception("nothing has been deleted, maybe no user found to delete");
-		else return nullptr;
-	}
-
-	std::optional<std::string> buyer_id_field;
-	std::optional<std::string> image_url_field;
-	if (!result[0]["buyer_id"].is_null())
-		buyer_id_field = result[0]["buyer_id"].as<std::string>();
-	else
-		buyer_id_field = std::nullopt;
-	if (!result[0]["image_url"].is_null())
-		image_url_field = result[0]["image_url"].as<std::string>();
-	else
-		image_url_field = std::nullopt;
-
-	return std::make_unique<ServiceModel>(
-		result[0]["id"].as<std::string>(),
-		result[0]["creator_id"].as<std::string>(),
-		buyer_id_field,
-		result[0]["title"].as<std::string>(),
-		result[0]["description"].as<std::string>(),
-		result[0]["price"].as<int>(),
-		result[0]["status"].as<std::string>(),
-		result[0]["type"].as<std::string>(),
-		image_url_field,
-		std::nullopt,
-		std::nullopt,
-		result[0]["created_at"].as<std::string>(),
-		result[0]["updated_at"].as<std::string>());
-}
-
-
 bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string& service_id, const std::map<std::string, std::string>& update_fields, bool throw_when_null) {
 	if (update_fields.empty()) {
 		if (throw_when_null)
@@ -450,174 +359,52 @@ bool ServiceModel::update_service_by_id(pqxx::connection& db, const std::string&
 	if (result.affected_rows() == 0) {
 		if (throw_when_null)
 			throw update_exception("nothing has been updated, maybe no user found to update");
-		else return false;
+		else
+			return false;
 	}
 
 	return true;
 }
 
-std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_self_by_type(pqxx::connection& db, const std::string& creator_id, const std::string& type) {
-	std::vector<std::unique_ptr<ServiceModel>> all_services;
-
+std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connection& db, const std::string id, bool throw_when_null) {
 	pqxx::work txn(db);
 
-	std::string query =
-		"SELECT s.id AS service_id, "
-		"s.creator_id, "
-		"s.buyer_id, "
-		"s.title, "
-		"s.description, "
-		"s.price, "
-		"s.status, "
-		"s.type, "
-		"s.image_url, "
-		"s.created_at, "
-		"s.updated_at, "
-		"uc.id AS creator_id, "
-		"uc.community_id AS creator_community_id, "
-		"uc.username AS creator_username, "
-		"uc.email AS creator_email, "
-		"uc.type AS creator_type, "
-		"uc.balance AS creator_balance, "
-		"uc.created_at AS creator_created_at, "
-		"uc.updated_at AS creator_updated_at, "
-		"ub.id AS buyer_id, "
-		"ub.community_id AS buyer_community_id, "
-		"ub.username AS buyer_username, "
-		"ub.email AS buyer_email, "
-		"ub.type AS buyer_type, "
-		"ub.balance AS buyer_balance, "
-		"ub.created_at AS buyer_created_at, "
-		"ub.updated_at AS buyer_updated_at "
-		"FROM services AS s "
-		"JOIN users AS uc ON s.creator_id = uc.id "
-		"LEFT JOIN users AS ub ON s.buyer_id = ub.id "
-		"WHERE s.creator_id = $1";
-
-	// Agregar filtro de status si se proporciona
-	if (!type.empty())
-		query += " AND s.type = $2";
-
-	pqxx::result result;
-	if (!type.empty()) {
-		result = txn.exec_params(query, creator_id, type);
-	}
-	else {
-		result = txn.exec_params(query, creator_id);
-	}
+	pqxx::result result = txn.exec_params("DELETE FROM services WHERE id = $1 RETURNING *", id);
 
 	txn.commit();
 
-	for (const auto& row : result) {
-		std::optional<std::string> buyer_id_field;
-		std::optional<std::string> image_url_field;
-		if (!row["buyer_id"].is_null())
-			buyer_id_field = row["buyer_id"].as<std::string>();
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw update_exception("nothing has been deleted, maybe no user found to delete");
 		else
-			buyer_id_field = std::nullopt;
-		if (!row["image_url"].is_null())
-			image_url_field = row["image_url"].as<std::string>();
-		else
-			image_url_field = std::nullopt;
-
-		// Crear instancia de UserModel para el creador
-		UserModel creator(
-			row["creator_id"].as<std::string>(),
-			row["creator_community_id"].as<std::string>(),
-			row["creator_username"].as<std::string>(),
-			row["creator_email"].as<std::string>(),
-			row["creator_type"].as<std::string>(),
-			row["creator_balance"].as<int>(),
-			row["creator_created_at"].as<std::string>(),
-			row["creator_updated_at"].as<std::string>(), std::nullopt);
-
-		// Crear instancia de UserModel para el comprador, si existe
-		std::optional<UserModel> buyer = std::nullopt;
-		if (buyer_id_field) {
-			buyer = UserModel(
-				row["buyer_id"].as<std::string>(),
-				row["buyer_community_id"].as<std::string>(),
-				row["buyer_username"].as<std::string>(),
-				row["buyer_email"].as<std::string>(),
-				row["buyer_type"].as<std::string>(),
-				row["buyer_balance"].as<int>(),
-				row["buyer_created_at"].as<std::string>(),
-				row["buyer_updated_at"].as<std::string>(), std::nullopt);
-		}
-
-		// Crear instancia de ServiceModel con UserModel como argumento adicional
-		all_services.push_back(std::make_unique<ServiceModel>(
-			row["service_id"].as<std::string>(),
-			row["creator_id"].as<std::string>(),
-			buyer_id_field,
-			row["title"].as<std::string>(),
-			row["description"].as<std::string>(),
-			row["price"].as<int>(),
-			row["status"].as<std::string>(),
-			row["type"].as<std::string>(),
-			image_url_field,
-			creator,
-			buyer,
-			row["created_at"].as<std::string>(),
-			row["updated_at"].as<std::string>()));
+			return nullptr;
 	}
 
-	return all_services;
+	std::optional<std::string> buyer_id_field;
+	std::optional<std::string> image_url_field;
+	if (!result[0]["buyer_id"].is_null())
+		buyer_id_field = result[0]["buyer_id"].as<std::string>();
+	else
+		buyer_id_field = std::nullopt;
+	if (!result[0]["image_url"].is_null())
+		image_url_field = result[0]["image_url"].as<std::string>();
+	else
+		image_url_field = std::nullopt;
+
+	return std::make_unique<ServiceModel>(
+		result[0]["id"].as<std::string>(),
+		result[0]["creator_id"].as<std::string>(),
+		buyer_id_field,
+		result[0]["title"].as<std::string>(),
+		result[0]["description"].as<std::string>(),
+		result[0]["price"].as<int>(),
+		result[0]["status"].as<std::string>(),
+		result[0]["type"].as<std::string>(),
+		image_url_field,
+		std::nullopt,
+		std::nullopt,
+		result[0]["created_at"].as<std::string>(),
+		result[0]["updated_at"].as<std::string>());
 }
 
-
-
-std::vector<std::unique_ptr<ServiceModel>> ServiceModel::get_services_sold_by_creator_id(pqxx::connection& db, const std::string& creator_id) {
-	try {
-		std::vector<std::unique_ptr<ServiceModel>> all_services;
-
-		pqxx::work txn(db);
-
-		std::string query = R"(
-            SELECT *
-			FROM services
-			WHERE buyer_id IS NOT NULL 
-			AND creator_id = $1;
-        )";
-
-		pqxx::result result = txn.exec_params(query, creator_id);
-
-		txn.commit();
-
-		for (const auto& row : result) {
-			std::optional<std::string> buyer_id_field;
-			std::optional<std::string> image_url_field;
-			if (!row["buyer_id"].is_null())
-				buyer_id_field = row["buyer_id"].as<std::string>();
-			else
-				buyer_id_field = std::nullopt;
-			if (!row["image_url"].is_null())
-				image_url_field = row["image_url"].as<std::string>();
-			else
-				image_url_field = std::nullopt;
-
-			// Crear instancia de ServiceModel con UserModel c omo argumento adicional
-			all_services.push_back(std::make_unique<ServiceModel>(
-				row["id"].as<std::string>(),
-				row["creator_id"].as<std::string>(),
-				buyer_id_field,
-				row["title"].as<std::string>(),
-				row["description"].as<std::string>(),
-				row["price"].as<int>(),
-				row["status"].as<std::string>(),
-				row["type"].as<std::string>(),
-				image_url_field,
-				std::nullopt,
-				std::nullopt,
-				row["created_at"].as<std::string>(),
-				row["updated_at"].as<std::string>()));
-		}
-
-		return all_services;
-	}
-	catch (const std::exception& e) {
-		std::cerr << "Failed to get services sold: " << e.what() << '\n';
-		return {};
-	}
-}
  

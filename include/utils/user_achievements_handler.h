@@ -5,6 +5,7 @@
 #include <utils/common.h>
 #include <memory>
 #include <pqxx/pqxx>
+#include <map>
 #include <string>
 #include <vector>
 
