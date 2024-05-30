@@ -1,14 +1,16 @@
 #pragma once
 
 #include <crow.h>
+#include <models/achievement_notification_model.h>
 #include <models/notification_model.h>
-#include <models/service_model.h>
 #include <models/notification_service_model.h>
+#include <models/service_model.h>
+#include <models/user_achievement_model.h>
 #include <models/user_model.h>
 #include <utils/common.h>
 #include <utils/utils.h>
-#include <map>
 #include <format>
+#include <map>
 #include <memory>
 #include <pqxx/pqxx>
 #include <string>

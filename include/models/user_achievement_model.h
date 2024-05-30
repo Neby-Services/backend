@@ -28,5 +28,7 @@ class UserAchievementModel {
 
 	static std::vector<std::unique_ptr<UserAchievementModel>> get_user_achievements_by_id(pqxx::connection& db, const std::string& user_id, const std::string& status = "", bool throw_when_null = false);
 
+	static std::unique_ptr<UserAchievementModel> get_user_achievement_by_id(pqxx::connection& db, const std::string& user_achievement_id, bool throw_when_null = false);
+
 	static std::unique_ptr<UserAchievementModel> update_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::map<std::string, std::string>& fields, bool throw_when_null = false);
 };
