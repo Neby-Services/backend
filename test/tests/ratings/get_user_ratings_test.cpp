@@ -122,7 +122,8 @@ protected:
 
         std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
         nlohmann::json new_rating = {
-            {"rating", "5"} };
+            {"rating", "5"},
+			{"description", "this is text"} };
         auto response = cpr::Post(cpr::Url{url_rating}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
         auto json = nlohmann::json::parse(response.text);
 	}
@@ -132,6 +133,18 @@ protected:
 		clean_user_table();
 	}
 };
+
+TEST_F(GetRatingCorrect, get_rating_empty_correct) {
+
+    std::string get_ratings_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/user/"+ _admin_id_;
+    auto r_get = cpr::Get(cpr::Url{ get_ratings_url }, cpr::Header{ {"Content-Type", "application/json"} });
+
+    std::cout << "rating: " << r_get.text << std::endl;
+
+    auto json = nlohmann::json::parse(r_get.text);
+	EXPECT_EQ(r_get.status_code, 200) << "Expected 201 status code for ratings obtained succesfully: ";
+	EXPECT_TRUE(json.contains("ratings"));
+}
 
 TEST_F(GetRatingCorrect, get_rating_service_correct) {
 
@@ -152,30 +165,32 @@ TEST_F(GetRatingCorrect, get_rating_multiple_services_correct) {
 		{"title", "nodeberiaeexistir"},
 		{"description", "some description 555555555"},
 		{"price", 0},
-		{"type", "requested"} };
-	auto s_create1 = cpr::Post(cpr::Url{ create_service_url1 }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_seervice.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
+		{"type", "offered"} };
+	auto s_create1 = cpr::Post(cpr::Url{ create_service_url1 }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Body{ new_seervice.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 
 	auto s_json1 = nlohmann::json::parse(s_create1.text);
 	std::string _service1_id_ = s_json1["id"];
 
 	std::string create_notification1_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications?type=services&service_id=" + _service1_id_;
-	auto n_create1 = cpr::Post(cpr::Url{ create_notification1_url }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
+	auto n_create1 = cpr::Post(cpr::Url{ create_notification1_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto n_json1 = nlohmann::json::parse(n_create1.text);
 	std::string _notification1_id_ = n_json1["notification_service"]["id"];
 
 
 	std::string n_accept1_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification1_id_ + "?action=accepted";
-	auto n_accept1 = cpr::Put(cpr::Url{ n_accept1_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
+	auto n_accept1 = cpr::Put(cpr::Url{ n_accept1_url }, cpr::Cookies{ {"token", _neighbor_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
 
 	std::string url_rating1 = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service1_id_  ;
 	nlohmann::json new_rating1 = {
-		{"rating", "4"} };
+		{"rating", "4"},
+		{"description", "this is text"} };
 	auto response1 = cpr::Post(cpr::Url{url_rating1}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating1.dump() }, cpr::Header{{"Content-Type", "application/json"}});
 
 
     std::string get_ratings_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/user/"+ _neighbor_id_;
     auto r_get = cpr::Get(cpr::Url{ get_ratings_url }, cpr::Header{ {"Content-Type", "application/json"} });
 
+std::cout << r_get.text << std::endl;
 
     auto json = nlohmann::json::parse(r_get.text);
 	EXPECT_EQ(r_get.status_code, 200) << "Expected 201 status code for ratings obtained succesfully: ";

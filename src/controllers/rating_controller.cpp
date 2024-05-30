@@ -10,7 +10,7 @@ void RatingController::create_rating(pqxx::connection& db, const crow::request& 
 
         crow::json::rvalue body = crow::json::load(req.body);
 
-        const std::vector<std::string> required_fields = {"id", "rating"};
+        const std::vector<std::string> required_fields = {"id", "rating", "description"};
 		if (!validate_required_body_fields(body, required_fields, res)) return;
 
         std::unique_ptr<ServiceModel> service = ServiceModel::get_service_by_id(db, service_id, false);
@@ -45,7 +45,9 @@ void RatingController::create_rating(pqxx::connection& db, const crow::request& 
             }
         }
 
-        std::unique_ptr<RatingModel> created_rating = RatingModel::create_rating(db, service_id, rating, false);
+        std::string description = body["description"].s();
+
+        std::unique_ptr<RatingModel> created_rating = RatingModel::create_rating(db, service_id, rating, description, false);
 
         if (!created_rating) {
 			handle_error(res, "internal server error", 500);
@@ -55,7 +57,8 @@ void RatingController::create_rating(pqxx::connection& db, const crow::request& 
 		crow::json::wvalue data(
 			{{"id", created_rating->get_id()},
 			 {"service_id", created_rating->get_service_id()},
-			 {"rating", created_rating->get_rating()}});
+			 {"rating", created_rating->get_rating()},
+             {"description", created_rating->get_description()}});
 
 		res.code = 201;
 		res.write(data.dump());
@@ -79,6 +82,14 @@ void RatingController::get_user_ratings(pqxx::connection& db, crow::response& re
         }
         std::vector<std::unique_ptr<RatingModel>> all_ratings = RatingModel::get_rating_by_user_id(db, user_id);
 
+        if (all_ratings.size() == 0) {
+            crow::json::wvalue data{{"ratings", "user has never been rated"}};
+
+            res.write(data.dump());
+            res.code = 200;
+            res.end();
+        }
+
         crow::json::wvalue::list user_ratings;
         for (unsigned int i = 0; i < all_ratings.size(); i++) {
             crow::json::wvalue cur_rating;
@@ -86,6 +97,13 @@ void RatingController::get_user_ratings(pqxx::connection& db, crow::response& re
             cur_rating["id"] = all_ratings[i]->get_id();
             cur_rating["service_id"] = all_ratings[i]->get_service_id();
             cur_rating["rating"] = all_ratings[i]->get_rating();
+            cur_rating["description"] = all_ratings[i]->get_description();
+
+            std::optional<std::string> sender_id = all_ratings[i]->get_sender_id();
+
+            if (sender_id.has_value()) {
+                cur_rating["sender_id"] = sender_id.value();
+            }
 
             user_ratings.push_back(cur_rating);
         }
