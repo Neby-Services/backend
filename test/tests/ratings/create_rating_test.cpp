@@ -266,12 +266,11 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 
 	std::string n_accept_url = "http://backend:" + std::to_string(HTTP_PORT) + "/api/notifications/" + _notification_id_ + "?action=accepted";
 	auto n_accept = cpr::Put(cpr::Url{ n_accept_url }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Header{ {"Content-Type", "application/json"} });
-
-
-	std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_;
-	nlohmann::json new_rating = {
-		{"rating", "9"} };
-	auto response = cpr::Post(cpr::Url{ url_rating }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_rating.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
+	
+    std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
+    nlohmann::json new_rating = {
+        {"rating", "5"} };
+	auto response = cpr::Post(cpr::Url{url_rating}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for rating ccreated succesfully: ";
