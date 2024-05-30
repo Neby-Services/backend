@@ -52,29 +52,40 @@ std::vector<std::unique_ptr<RatingModel>> RatingModel::get_rating_by_user_id(pqx
   pqxx::work txn(db);
 
   std::string query =
+    "WITH service_neighbors AS ("
+    "  SELECT "
+    "      CASE "
+    "          WHEN s.type = 'requested' THEN s.buyer_id "
+    "          WHEN s.type = 'offered' THEN s.creator_id "
+    "      END AS neighbor_id, "
+    "      r.rating AS rating, "
+    "      r.id AS id, "
+    "      r.service_id AS service_id "
+    "  FROM "
+    "      services AS s "
+    "  JOIN "
+    "      ratings AS r ON r.service_id = s.id "
+    "  WHERE "
+    "      s.status = 'closed'"
+    ")"
     "SELECT "
-    "CASE "
-    "WHEN s.type = 'requested' THEN s.buyer_id "
-    "WHEN s.type = 'offered' THEN s.creator_id "
-    "END AS neighbor_id, "
-    "r.rating AS rating, "
-    "r.id AS id "
-    "r.service_id AS service_id"
+    "    neighbor_id, "
+    "    rating, "
+    "    id, "
+    "    service_id "
     "FROM "
-    "services AS s "
-    "JOIN "
-    "ratings AS r ON r.service_id = s.id "
+    "    service_neighbors "
     "WHERE "
-    "s.service_status = 'closed' AND "
-    "neighbor_id = $1";
+    "    neighbor_id = $1";
+
   
   pqxx::result result;
-	result = txn.exec_params(query, user_id);
-	
+  result = txn.exec_params(query, user_id);
+  
   for (const auto& row : result) {
 
-		all_ratings.push_back(std::make_unique<RatingModel>(
-			row["id"].as<std::string>(),
+    all_ratings.push_back(std::make_unique<RatingModel>(
+      row["id"].as<std::string>(),
       row["service_id"].as<std::string>(),
       row["rating"].as<int>()));
   }

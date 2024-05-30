@@ -38,7 +38,7 @@ void RatingController::create_rating(pqxx::connection& db, const crow::request& 
         }
 
         int rating = body["rating"].i();
-        if (rating > 10 || rating < 0) {
+        if (rating > 5 || rating < 1) {
             if (service->get_creator_id() != body["id"].s()) {
                 handle_error(res, "invalid rating", 400);
                 return;
@@ -73,12 +73,10 @@ void RatingController::get_user_ratings(pqxx::connection& db, crow::response& re
             handle_error(res, "invalid UUID format", 400);
             return;
         }
-
         if (UserModel::get_user_by_id(db, user_id) == nullptr) {
             handle_error(res, "user not found", 404);
             return;
         }
-
         std::vector<std::unique_ptr<RatingModel>> all_ratings = RatingModel::get_rating_by_user_id(db, user_id);
 
         crow::json::wvalue::list user_ratings;
@@ -91,7 +89,6 @@ void RatingController::get_user_ratings(pqxx::connection& db, crow::response& re
 
             user_ratings.push_back(cur_rating);
         }
-
         crow::json::wvalue data{{"ratings", user_ratings}};
 
         res.write(data.dump());
