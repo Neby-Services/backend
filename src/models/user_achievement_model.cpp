@@ -125,8 +125,6 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::get_use
 	return user_achievements;
 }
 
-
-
 std::unique_ptr<UserAchievementModel> UserAchievementModel::update_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::map<std::string, std::string>& fields, bool throw_when_null) {
 	if (fields.empty())
 		throw update_exception("nothing has been updated, there is no data to update");
@@ -142,7 +140,7 @@ std::unique_ptr<UserAchievementModel> UserAchievementModel::update_by_id(pqxx::c
 		params.push_back(field.second);
 	}
 
-	std::string query = "UPDATE user_achievements SET " + join_query_update(set_clauses, ", ") + " WHERE id = $" + std::to_string(param_count) + " RETURNING ua.*, a.*";
+	std::string query = "UPDATE user_achievements AS ua SET " + join_query_update(set_clauses, ", ") + " FROM achievements AS a WHERE ua.achievement_title = a.title AND ua.id = $" + std::to_string(param_count) + " RETURNING ua.*, a.*";
 
 	params.push_back(user_achievement_id);
 
