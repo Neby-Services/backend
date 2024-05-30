@@ -14,7 +14,7 @@ This document outlines the testing scenarios for the `register_user` endpoint in
 		```json
 		{
 			"id": "user_id_registered"
-		}  
+		}
 		```
         - Set-Cookie header with JWT token for authentication.
 
