@@ -44,7 +44,7 @@ bool NotificationServiceModel::is_requested(pqxx::connection& db, const std::str
 
 	if (result.empty() && throw_when_null)
 		throw data_not_found_exception("notification not found");
- 
+
 	if (!result.empty()) {
 		int count = result[0][0].as<int>();
 

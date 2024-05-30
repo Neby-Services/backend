@@ -407,4 +407,3 @@ std::unique_ptr<ServiceModel> ServiceModel::delete_service_by_id(pqxx::connectio
 		result[0]["updated_at"].as<std::string>());
 }
 
- 
