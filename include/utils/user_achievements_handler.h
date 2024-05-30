@@ -2,10 +2,12 @@
 #include <models/service_model.h>
 #include <models/user_achievement_model.h>
 #include <models/notification_service_model.h>
+#include <models/notification_model.h>
 #include <utils/common.h>
 #include <memory>
 #include <pqxx/pqxx>
 #include <map>
+#include <models/achievement_notification_model.h>
 #include <string>
 #include <vector>
 
