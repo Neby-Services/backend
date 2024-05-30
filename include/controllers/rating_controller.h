@@ -3,6 +3,7 @@
 #include <crow.h>
 #include <format>
 #include <memory>
+#include <optional>
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>

@@ -113,7 +113,8 @@ TEST_F(CreateRatingInvalidUUID, create_rating_service_not_found) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/75b7a53a-e207-4d68-8d57-57a6c9393732";
 
 	nlohmann::json new_rating = {
-		{"rating", "9"} };
+		{"rating", "4"},
+		{"description", "this is text"} };
 
 	auto response = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_rating.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
@@ -138,7 +139,8 @@ TEST_F(CreateRatingInvalidUUID, create_rating_service_not_closed) {
 	std::string url_service = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_;
 
 	nlohmann::json new_rating = {
-		{"rating", "9"} };
+		{"rating", "9"},
+		{"description", "this is text"} };
 
 	auto response = cpr::Post(cpr::Url{ url_service }, cpr::Cookies{ {"token", _admin_token_} }, cpr::Body{ new_rating.dump() }, cpr::Header{ {"Content-Type", "application/json"} });
 	auto json = nlohmann::json::parse(response.text);
@@ -269,8 +271,12 @@ TEST_F(CreateRatingCorrect, create_rating_service_correct) {
 	
     std::string url_rating = "http://backend:" + std::to_string(HTTP_PORT) + "/api/ratings/" + _service_id_  ;
     nlohmann::json new_rating = {
-        {"rating", "5"} };
+        {"rating", "5"},
+		{"description", "this is text"} };
 	auto response = cpr::Post(cpr::Url{url_rating}, cpr::Cookies{{"token", _admin_token_}}, cpr::Body{ new_rating.dump() }, cpr::Header{{"Content-Type", "application/json"}});
+	
+	std::cout << "rating: " << response.text << std::endl;
+
 	auto json = nlohmann::json::parse(response.text);
 
 	EXPECT_EQ(response.status_code, 201) << "Expected 201 status code for rating ccreated succesfully: ";
