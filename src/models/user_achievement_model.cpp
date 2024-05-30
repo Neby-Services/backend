@@ -2,27 +2,21 @@
 
 UserAchievementModel::UserAchievementModel(std::string id, std::string achievement_title, std::string user_id, std::string status, std::optional<AchievementModel> achievement) : _id(id), _achievement_title(achievement_title), _user_id(user_id), _status(status), _achievement(achievement) {}
 
-// * GETTERS
-
 std::string UserAchievementModel::get_id() const { return _id; }
 std::string UserAchievementModel::get_achievement_title() const { return _achievement_title; }
 std::string UserAchievementModel::get_user_id() const { return _user_id; }
 std::string UserAchievementModel::get_status() const { return _status; }
 std::optional<AchievementModel> UserAchievementModel::get_achievement() const { return _achievement; }
 
-// * ------------------------------------------------------------------------------
-
 std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_user_achievement_tables(pqxx::connection& db, const std::vector<std::string>& achievements_titles, const std::string& user_id, bool throw_when_null) {
 	std::vector<std::unique_ptr<UserAchievementModel>> all_user_achievements;
 
 	pqxx::work txn(db);
 
-	// Iterating through achievement titles
 	for (const auto& title : achievements_titles) {
 		// Inserting user achievement relation
 		pqxx::result result = txn.exec_params("INSERT INTO user_achievements (user_id, achievement_title) VALUES ($1, $2) RETURNING id, user_id, achievement_title, status", user_id, title);
 
-		// Checking if the insertion succeeded
 		if (result.empty()) {
 			if (throw_when_null) {
 				throw std::runtime_error("Failed to insert user achievement");
@@ -31,16 +25,13 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_
 			}
 		}
 
-		// Retrieving inserted user achievement data
 		auto row = result[0];
 		std::string id = row["id"].as<std::string>();
 		std::string achievement_title = row["achievement_title"].as<std::string>();
 		std::string status = row["status"].as<std::string>();
 
-		// Querying achievement details for the inserted achievement
 		pqxx::result achievement_result = txn.exec_params("SELECT title, description, reward FROM achievements WHERE title = $1", achievement_title);
 
-		// Checking if achievement details were found
 		if (achievement_result.empty()) {
 			if (throw_when_null) {
 				throw std::runtime_error("Failed to find achievement details");
@@ -49,23 +40,18 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::create_
 			}
 		}
 
-		// Retrieving achievement details
 		auto achievement_row = achievement_result[0];
 		std::string achievement_title_db = achievement_row["title"].as<std::string>();
 		std::string description = achievement_row["description"].as<std::string>();
 		int reward = achievement_row["reward"].as<int>();
 
-		// Creating AchievementModel instance
 		AchievementModel achievement(achievement_title_db, description, reward);
 
-		// Creating UserAchievementModel instance
 		std::unique_ptr<UserAchievementModel> user_achievement = std::make_unique<UserAchievementModel>(id, achievement_title, user_id, status, std::make_optional(achievement));
 
-		// Adding to the result vector
 		all_user_achievements.push_back(std::move(user_achievement));
 	}
 
-	// Committing transaction
 	txn.commit();
 
 	return all_user_achievements;
@@ -125,8 +111,6 @@ std::vector<std::unique_ptr<UserAchievementModel>> UserAchievementModel::get_use
 	return user_achievements;
 }
 
-
-
 std::unique_ptr<UserAchievementModel> UserAchievementModel::update_by_id(pqxx::connection& db, const std::string& user_achievement_id, const std::map<std::string, std::string>& fields, bool throw_when_null) {
 	if (fields.empty())
 		throw update_exception("nothing has been updated, there is no data to update");
@@ -142,7 +126,7 @@ std::unique_ptr<UserAchievementModel> UserAchievementModel::update_by_id(pqxx::c
 		params.push_back(field.second);
 	}
 
-	std::string query = "UPDATE user_achievements SET " + join_query_update(set_clauses, ", ") + " WHERE id = $" + std::to_string(param_count) + " RETURNING ua.*, a.*";
+	std::string query = "UPDATE user_achievements AS ua SET " + join_query_update(set_clauses, ", ") + " FROM achievements AS a WHERE ua.achievement_title = a.title AND ua.id = $" + std::to_string(param_count) + " RETURNING ua.*, a.*";
 
 	params.push_back(user_achievement_id);
 

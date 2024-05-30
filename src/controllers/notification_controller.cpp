@@ -289,10 +289,16 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 		res.write(notification_service_json.dump());
 
 		res.end();
+	} catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	} catch (const update_exception& e) {
+		CROW_LOG_ERROR << "Update exception: " << e.what();
+		handle_error(res, e.what(), 404);
 	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in handle_notification controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
-	}
+	}  
 }
 
 void NotificationController::get_notifications(pqxx::connection& db, const crow::request& req, crow::response& res) {
@@ -364,6 +370,9 @@ void NotificationController::get_notifications(pqxx::connection& db, const crow:
 
 		res.end();
 	} catch (const pqxx::data_exception& e) {
+		CROW_LOG_ERROR << "PQXX execption: " << e.what();
+		handle_error(res, "invalid id", 400);
+	} catch (const data_not_found_exception& e) {
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
 		handle_error(res, "invalid id", 400);
 	} catch (const std::exception& e) {

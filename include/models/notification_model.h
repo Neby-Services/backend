@@ -24,8 +24,8 @@ public:
 	std::string get_updated_at() const;
 	std::optional<NotificationServiceModel> get_notification_service();
 
-	static std::unique_ptr<NotificationModel> create_notification(pqxx::connection& db, const std::string& type, bool throw_when_null = false);
-	static std::unique_ptr<NotificationModel> get_notification_service_by_id(pqxx::connection& db, const std::string& sender_id, const std::string& service_id, bool throw_when_null = false);
+	static std::unique_ptr<NotificationModel> create_notification(pqxx::connection& db, const std::string& type, bool throw_when_null = false );
+	static std::unique_ptr<NotificationModel> get_notification_service_by_id(pqxx::connection& db, const std::string& sender_id, const std::string& service_id, bool throw_when_null = false); 
 
 	static std::vector<NotificationModel> get_notifications_self(pqxx::connection& db, const std::string& user_id, bool throw_when_null = false);
 };
