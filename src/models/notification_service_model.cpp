@@ -10,29 +10,24 @@ std::string NotificationServiceModel::get_status() const { return _status; }
 std::string NotificationServiceModel::get_notification_id() const { return _notification_id; }
 
 std::unique_ptr<NotificationServiceModel> NotificationServiceModel::create_notification_service(pqxx::connection& db, const std::string& notification_id, const std::string& sender_id, const std::string& service_id, const std::string& status, bool throw_when_null) {
-	try {
-		pqxx::work txn(db);
+	pqxx::work txn(db);
 
-		pqxx::result result = txn.exec_params("INSERT INTO notifications_services (sender_id, service_id, status, notification_id) VALUES ($1, $2, $3, $4) RETURNING id, sender_id, service_id, status, notification_id", sender_id, service_id, status, notification_id);
+	pqxx::result result = txn.exec_params("INSERT INTO notifications_services (sender_id, service_id, status, notification_id) VALUES ($1, $2, $3, $4) RETURNING id, sender_id, service_id, status, notification_id", sender_id, service_id, status, notification_id);
 
-		txn.commit();
+	txn.commit();
 
-		if (result.empty()) {
-			if (throw_when_null)
-				throw creation_exception("notification_service could not be created");
-			return nullptr;
-		}
-
-		return std::make_unique<NotificationServiceModel>(
-			result[0]["id"].as<std::string>(),
-			result[0]["sender_id"].as<std::string>(),
-			result[0]["service_id"].as<std::string>(),
-			result[0]["status"].as<std::string>(),
-			result[0]["notification_id"].as<std::string>());
-	} catch (const std::exception& e) {
-		std::cerr << "Error to create notification: " << e.what() << std::endl;
+	if (result.empty()) {
+		if (throw_when_null)
+			throw creation_exception("notification_service could not be created");
 		return nullptr;
 	}
+
+	return std::make_unique<NotificationServiceModel>(
+		result[0]["id"].as<std::string>(),
+		result[0]["sender_id"].as<std::string>(),
+		result[0]["service_id"].as<std::string>(),
+		result[0]["status"].as<std::string>(),
+		result[0]["notification_id"].as<std::string>());
 }
 
 bool NotificationServiceModel::is_requested(pqxx::connection& db, const std::string& sender_id, const std::string& service_id, bool throw_when_null) {

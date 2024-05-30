@@ -23,6 +23,7 @@ void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& 
 		if (e.first == "id")
 			id = e.second.get<std::string>();
 	}
+	std::cout << "id: " << id << std::endl;
 
 	std::unique_ptr<UserModel> user = UserModel::get_user_by_id(*conn.get(), id);
 

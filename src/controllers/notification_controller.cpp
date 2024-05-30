@@ -298,7 +298,7 @@ void NotificationController::handle_notification(pqxx::connection& db, crow::req
 	} catch (const std::exception& e) {
 		CROW_LOG_ERROR << "Error in handle_notification controller: " << e.what();
 		handle_error(res, "internal server errror", 500);
-	}  
+	}
 }
 
 void NotificationController::get_notifications(pqxx::connection& db, const crow::request& req, crow::response& res) {
@@ -311,15 +311,51 @@ void NotificationController::get_notifications(pqxx::connection& db, const crow:
 		crow::json::wvalue::list notifications_json;
 
 		for (unsigned int i = 0; i < notifications.size(); i++) {
-			crow::json::wvalue notification;
-			notification["id"] = notifications[i].get_id();
-			notification["type"] = notifications[i].get_type();
-			notification["created_at"] = notifications[i].get_created_at();
-			notification["updated_at"] = notifications[i].get_updated_at();
+			crow::json::wvalue notification_json;
 
-			if (notifications[i].get_notification_service().has_value()) {
+			NotificationModel notification = notifications[i];
+
+			notification_json["id"] = notification.get_id();
+			notification_json["type"] = notification.get_type();
+			notification_json["created_at"] = notification.get_created_at();
+			notification_json["updated_at"] = notification.get_updated_at();
+
+			if (notification.get_achievement_notification().has_value()) {
+				crow::json::wvalue achievement_notification_json;
+
+				AchievementNotificationModel achievement_notification = notification.get_achievement_notification().value();
+
+				achievement_notification_json["id"] = achievement_notification.get_id();
+				achievement_notification_json["user_achievement_id"] = achievement_notification.get_achievement_user_id();
+
+				std::unique_ptr<UserAchievementModel> user_achievement = UserAchievementModel::get_user_achievement_by_id(db, achievement_notification.get_achievement_user_id(), true);
+				crow::json::wvalue user_achievement_json;
+
+				user_achievement_json["id"] = user_achievement.get()->get_id();
+				user_achievement_json["user_id"] = user_achievement.get()->get_user_id();
+				user_achievement_json["achievement_title"] = user_achievement.get()->get_achievement_title();
+				user_achievement_json["status"] = user_achievement.get()->get_status();
+
+				crow::json::wvalue achievement_json;
+				achievement_json["title"] = user_achievement.get()->get_achievement().value().get_title();
+				achievement_json["reward"] = user_achievement.get()->get_achievement().value().get_reward();
+				achievement_json["description"] = user_achievement.get()->get_achievement().value().get_description();
+
+				user_achievement_json["achievement"] = crow::json::wvalue(achievement_json);
+
+				achievement_notification_json["user_achievement"] = crow::json::wvalue(user_achievement_json);
+
+				achievement_notification_json["notification_id"] = achievement_notification.get_notification_id();
+
+				notification_json["achievement_notification_id"] = achievement_notification.get_id();
+				notification_json["achievement_notification"] = crow::json::wvalue(achievement_notification_json);
+			}
+
+			if (notification.get_notification_service().has_value()) {
 				crow::json::wvalue service_notification_json;
+
 				NotificationServiceModel service_notification = notifications[i].get_notification_service().value();
+
 				service_notification_json["id"] = service_notification.get_id();
 				service_notification_json["status"] = service_notification.get_status();
 				service_notification_json["service_id"] = service_notification.get_service_id();
@@ -356,10 +392,11 @@ void NotificationController::get_notifications(pqxx::connection& db, const crow:
 
 				service_notification_json["sender"] = crow::json::wvalue(sender_json);
 
-				notification["service_notification"] = crow::json::wvalue(service_notification_json);
+				notification_json["service_notification_id"] = service_notification.get_id();
+				notification_json["service_notification"] = crow::json::wvalue(service_notification_json);
 			}
 
-			notifications_json.push_back(notification);
+			notifications_json.push_back(notification_json);
 		}
 
 		res.code = 200;
