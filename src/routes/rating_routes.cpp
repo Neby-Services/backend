@@ -12,4 +12,10 @@ void initialize_rating_routes(NebyApp& app, ConnectionPool& pool) {
 		RatingController::get_user_ratings(*conn.get(), res, user_id);
 		pool.release_connection(conn);
 	});
+
+	CROW_ROUTE(app, "/api/ratings/service/<string>").methods(crow::HTTPMethod::GET)([&pool](const crow::request& req, crow::response& res, const std::string& service_id) {
+		auto conn = pool.get_connection();
+		RatingController::get_service_rating(*conn.get(), res, service_id);
+		pool.release_connection(conn);
+	});
 }

@@ -112,9 +112,33 @@ std::unique_ptr<RatingModel> RatingModel::get_rating_by_service_id(pqxx::connect
   pqxx::work txn(db);
 
   std::string query = 
-  "SELECT id, service_id, rating "
-  "FROM ratings "
-  "WHERE service_id = $1";
+    "WITH service_neighbors AS ("
+    "  SELECT "
+    "      CASE "
+    "          WHEN s.type = 'requested' THEN s.creator_id "
+    "          WHEN s.type = 'offered' THEN s.buyer_id "
+    "      END AS sender_id, "
+    "      r.rating AS rating, "
+    "      r.id AS id, "
+    "      r.service_id AS service_id, "
+    "      r.description AS description "
+    "  FROM "
+    "      services AS s "
+    "  JOIN "
+    "      ratings AS r ON r.service_id = s.id "
+    "  WHERE "
+    "      s.status = 'closed'"
+    ")"
+    "SELECT "
+    "    sender_id, "
+    "    rating, "
+    "    description, "
+    "    id, "
+    "    service_id "
+    "FROM "
+    "    service_neighbors "
+    "WHERE "
+    "    service_id = $1";
   pqxx::result result;
 	result = txn.exec_params(query, service_id);
 
@@ -122,7 +146,8 @@ std::unique_ptr<RatingModel> RatingModel::get_rating_by_service_id(pqxx::connect
     result[0]["id"].as<std::string>(),
     result[0]["service_id"].as<std::string>(),
     result[0]["rating"].as<int>(),
-    result[0]["description"].as<std::string>());
+    result[0]["description"].as<std::string>(),
+    result[0]["sender_id"].as<std::string>());
 }
 
 std::unique_ptr<RatingModel> RatingModel::get_rating_by_id(pqxx::connection& db, const std::string& rating_id) {

@@ -80,9 +80,9 @@ void RatingController::get_user_ratings(pqxx::connection& db, crow::response& re
             handle_error(res, "user not found", 404);
             return;
         }
-        std::vector<std::unique_ptr<RatingModel>> all_ratings = RatingModel::get_rating_by_user_id(db, user_id);
+        std::vector<std::unique_ptr<RatingModel>> s_rating = RatingModel::get_rating_by_user_id(db, user_id);
 
-        if (all_ratings.size() == 0) {
+        if (s_rating.size() == 0) {
             crow::json::wvalue data{{"ratings", "user has never been rated"}};
 
             res.write(data.dump());
@@ -91,23 +91,65 @@ void RatingController::get_user_ratings(pqxx::connection& db, crow::response& re
         }
 
         crow::json::wvalue::list user_ratings;
-        for (unsigned int i = 0; i < all_ratings.size(); i++) {
-            crow::json::wvalue cur_rating;
+        for (unsigned int i = 0; i < s_rating.size(); i++) {
+            crow::json::wvalue data;
 
-            cur_rating["id"] = all_ratings[i]->get_id();
-            cur_rating["service_id"] = all_ratings[i]->get_service_id();
-            cur_rating["rating"] = all_ratings[i]->get_rating();
-            cur_rating["description"] = all_ratings[i]->get_description();
+            data["id"] = s_rating[i]->get_id();
+            data["service_id"] = s_rating[i]->get_service_id();
+            data["rating"] = s_rating[i]->get_rating();
+            data["description"] = s_rating[i]->get_description();
 
-            std::optional<std::string> sender_id = all_ratings[i]->get_sender_id();
+            std::optional<std::string> sender_id = s_rating[i]->get_sender_id();
 
             if (sender_id.has_value()) {
-                cur_rating["sender_id"] = sender_id.value();
+                data["sender_id"] = sender_id.value();
             }
 
-            user_ratings.push_back(cur_rating);
+            user_ratings.push_back(data);
         }
         crow::json::wvalue data{{"ratings", user_ratings}};
+
+        res.write(data.dump());
+        res.code = 200;
+        res.end();
+    } catch (const std::exception& e) {
+        std::cerr << "Error getting ratings: " << e.what() << std::endl;
+		handle_error(res, "internal server error", 500);
+    }
+}
+
+void RatingController::get_service_rating(pqxx::connection& db, crow::response& res, const std::string& service_id) {
+    try {
+        if (!isValidUUID(service_id)) {
+            handle_error(res, "invalid UUID format", 400);
+            return;
+        }
+        if (ServiceModel::get_service_by_id(db, service_id) == nullptr) {
+            handle_error(res, "user not found", 404);
+            return;
+        }
+        std::unique_ptr<RatingModel> s_rating = RatingModel::get_rating_by_service_id(db, service_id);
+
+        if (s_rating == nullptr) {
+            crow::json::wvalue data{{"ratings", "service has not been rated"}};
+
+            res.write(data.dump());
+            res.code = 200;
+            res.end();
+        }
+
+        crow::json::wvalue data;
+
+        data["id"] = s_rating->get_id();
+        data["service_id"] = s_rating->get_service_id();
+        data["rating"] = s_rating->get_rating();
+        data["description"] = s_rating->get_description();
+
+        std::optional<std::string> sender_id = s_rating->get_sender_id();
+
+        if (sender_id.has_value()) {
+            data["sender_id"] = sender_id.value();
+        }
 
         res.write(data.dump());
         res.code = 200;
