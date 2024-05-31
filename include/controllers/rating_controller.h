@@ -24,4 +24,5 @@ class RatingController {
     static void create_rating(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& service_id);
     static void update_rating(pqxx::connection& db, const crow::request& req, crow::response& res, const std::string& rating_id);
     static void get_user_ratings(pqxx::connection& db, crow::response& res, const std::string& user_id);
+    static void get_service_rating(pqxx::connection& db, crow::response& res, const std::string& service_id);
 };
