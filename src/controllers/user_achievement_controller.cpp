@@ -51,11 +51,18 @@ void UserAchievementController::claim_user_achievement(pqxx::connection& db, cro
 		std::string user_id = body["id"].s();
 
 		std::map<std::string, std::string> fields = {
-			{"status", AchievementStatus::COMPLETED}};
+			{"status", AchievementStatus::CLAIMED}};
+
+		std::unique_ptr<UserAchievementModel> user_achievement = UserAchievementModel::get_user_achievement_by_id(db, arch_id, true);
+
+		if (user_achievement.get()->get_status() == AchievementStatus::CLAIMED) {
+			handle_error(res, "you cannot claim an achievement more than once", 400);
+			return;
+		}
 
 		std::unique_ptr<UserAchievementModel> updated_achievement = UserAchievementModel::update_by_id(db, arch_id, fields, true);
 
-		if (!updated_achievement && updated_achievement->get_achievement().value().get_reward() > 0) {
+		if (updated_achievement->get_achievement().value().get_reward() > 0) {
 			int reward = updated_achievement->get_achievement().value().get_reward();
 
 			std::unique_ptr<UserModel> user = UserModel::get_user_by_id(db, user_id, true);
@@ -72,6 +79,7 @@ void UserAchievementController::claim_user_achievement(pqxx::connection& db, cro
 			res.end();
 		} else {
 			handle_error(res, "reward no positive number", 400);
+			return;
 		}
 	} catch (const pqxx::data_exception& e) {
 		CROW_LOG_ERROR << "PQXX execption: " << e.what();
