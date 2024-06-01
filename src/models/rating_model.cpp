@@ -36,7 +36,7 @@ std::unique_ptr<RatingModel> RatingModel::create_rating(pqxx::connection& db, co
 	}
 }
 
-std::unique_ptr<RatingModel> RatingModel::update_rating(pqxx::connection& db, const std::string& rating_id, const int& rating, const std::string& description, bool throw_when_null) {
+bool RatingModel::update_rating(pqxx::connection& db, const std::string& rating_id, const int& rating, const std::string& description, bool throw_when_null) {
 	if (rating_id.empty() && rating == 0 && description.empty()) {
 		throw update_exception("nothing has been updated, there is no data to update");
 	}
@@ -52,18 +52,14 @@ std::unique_ptr<RatingModel> RatingModel::update_rating(pqxx::connection& db, co
 
 	txn.commit();
 
-	if (result.empty()) {
-		if (throw_when_null) {
-			throw data_not_found_exception("User achievement not found");
-		}
-		return nullptr;
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw update_exception("nothing has been updated, maybe no user found to update");
+		else
+			return false;
 	}
 
-	return std::make_unique<RatingModel>(
-		result[0]["id"].as<std::string>(),
-		result[0]["service_id"].as<std::string>(),
-		result[0]["rating"].as<int>(),
-		result[0]["description"].as<std::string>());
+	return true;
 }
 
 std::vector<std::unique_ptr<RatingModel>> RatingModel::get_rating_by_user_id(pqxx::connection& db, const std::string& user_id, bool throw_when_null) {
@@ -109,10 +105,6 @@ std::vector<std::unique_ptr<RatingModel>> RatingModel::get_rating_by_user_id(pqx
 	result = txn.exec_params(query, user_id);
 
 	txn.commit();
-
-	if (result.empty() && throw_when_null) {
-		throw data_not_found_exception("services not found");
-	}
 
 	for (const auto& row : result) {
 		all_ratings.push_back(std::make_unique<RatingModel>(
@@ -162,13 +154,6 @@ std::unique_ptr<RatingModel> RatingModel::get_rating_by_service_id(pqxx::connect
 
 	txn.commit();
 
-	if (result.empty()) {
-		if (throw_when_null) {
-			throw data_not_found_exception("User achievement not found");
-		}
-		return nullptr;
-	}
-
 	return std::make_unique<RatingModel>(
 		result[0]["id"].as<std::string>(),
 		result[0]["service_id"].as<std::string>(),
@@ -191,7 +176,7 @@ std::unique_ptr<RatingModel> RatingModel::get_rating_by_id(pqxx::connection& db,
 
 	if (result.empty()) {
 		if (throw_when_null) {
-			throw data_not_found_exception("User achievement not found");
+			throw data_not_found_exception("Id rating not found");
 		}
 		return nullptr;
 	}
