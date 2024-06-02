@@ -154,6 +154,13 @@ std::unique_ptr<RatingModel> RatingModel::get_rating_by_service_id(pqxx::connect
 
 	txn.commit();
 
+	if (result.empty()) {
+		if (throw_when_null)
+			throw data_not_found_exception("rating not found");
+		else
+			return nullptr;
+	}
+
 	return std::make_unique<RatingModel>(
 		result[0]["id"].as<std::string>(),
 		result[0]["service_id"].as<std::string>(),

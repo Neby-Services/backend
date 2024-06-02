@@ -120,15 +120,7 @@ void RatingController::get_service_rating(pqxx::connection& db, crow::response& 
 
 		ServiceModel::get_service_by_id(db, service_id, true);
 
-		std::unique_ptr<RatingModel> s_rating = RatingModel::get_rating_by_service_id(db, service_id);
-
-		if (s_rating == nullptr) {
-			crow::json::wvalue data{{"ratings", "service has not been rated"}};
-
-			res.write(data.dump());
-			res.code = 200;
-			res.end();
-		}
+		std::unique_ptr<RatingModel> s_rating = RatingModel::get_rating_by_service_id(db, service_id, true);
 
 		crow::json::wvalue data;
 
