@@ -42,4 +42,10 @@ void initialize_service_routes(NebyApp& app, ConnectionPool& pool) {
 		ServiceController::update_service(*conn.get(), req, res, service_id);
 		pool.release_connection(conn);
 	});
+
+	CROW_ROUTE(app, "/api/services/user/<string>").methods(crow::HTTPMethod::GET).CROW_MIDDLEWARES(app, VerifyJWT)([&pool](const crow::request& req, crow::response& res, const std::string& user_id) {
+		auto conn = pool.get_connection();
+		ServiceController::get_service_by_user_id(*conn.get(), req, res, user_id);
+		pool.release_connection(conn);
+	});
 }
