@@ -8,29 +8,20 @@
 
 class ConnectionPool {
 	public:
-	static ConnectionPool& getInstance(const std::string& connectionString, int poolSize) {
-		static ConnectionPool instance(connectionString, poolSize);
-		return instance;
-	}
+	ConnectionPool(const std::string& connection_string, int pool_size);
+	~ConnectionPool();
 
-	ConnectionPool(const ConnectionPool&) = delete;
-	ConnectionPool& operator=(const ConnectionPool&) = delete;
+	std::shared_ptr<pqxx::connection> get_connection();
 
-	std::shared_ptr<pqxx::connection> getConnection();
-
-	void releaseConnection(std::shared_ptr<pqxx::connection> conn);
+	void release_connection(std::shared_ptr<pqxx::connection> conn);
 
 	private:
-	ConnectionPool(const std::string& connectionString, int poolSize);
-
-	~ConnectionPool() ;
-	
-	std::shared_ptr<pqxx::connection> createConnection();
+	std::shared_ptr<pqxx::connection> create_connection();
 
 	private:
-	std::string connectionString_;
-	int poolSize_;
-	std::deque<std::shared_ptr<pqxx::connection>> connections_;
-	std::mutex mutex_;
-	std::condition_variable condition_;
+	std::string _connection_string;
+	int _pool_size;
+	std::deque<std::shared_ptr<pqxx::connection>> _connections;
+	std::mutex _mutex;
+	std::condition_variable _condition;
 };

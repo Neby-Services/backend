@@ -13,13 +13,10 @@ std::string CommunityModel::generate_community_code(const std::string& seed) {
 	const int codeLength = 8;
 	std::string code;
 
-	// Obtener la hora actual en segundos
 	std::time_t now = std::time(nullptr);
 
-	// Convertir la semilla y la hora actual en una cadena para usar como base para la generación de código
 	std::string seedTime = seed + std::to_string(now);
 
-	// Usar std::hash para obtener una semilla de generación única
 	std::size_t seedValue = std::hash<std::string>{}(seedTime);
 	std::srand(seedValue);
 
@@ -54,34 +51,6 @@ std::unique_ptr<CommunityModel> CommunityModel::create_community(pqxx::connectio
 		result[0]["updated_at"].as<std::string>());
 }
 
-bool CommunityModel::exists_name(pqxx::connection& db, const std::string& name) {
-	try {
-		pqxx::work txn(db);
-
-		pqxx::result result = txn.exec_params("SELECT community_name FROM communities WHERE community_name = $1", name);
-
-		txn.commit();
-
-		return !result.empty() && !result[0][0].is_null();
-	} catch (const std::exception& e) {
-		return false;
-	}
-}
-
-bool CommunityModel::exists_code(pqxx::connection& db, const std::string& code) {
-	try {
-		pqxx::work txn(db);
-
-		pqxx::result result = txn.exec_params("SELECT community_code FROM communities WHERE community_code = $1", code);
-
-		txn.commit();
-
-		return !result.empty() && !result[0][0].is_null();
-	} catch (const std::exception& e) {
-		return false;
-	}
-}
-
 std::unique_ptr<CommunityModel> get_community(pqxx::connection& db, const std::string& column, const std::string& value, bool throw_when_null) {
 	pqxx::work txn(db);
 	pqxx::result result = txn.exec_params(std::format("SELECT id, name, code, created_at, updated_at FROM communities WHERE {} = $1", column), value);
@@ -105,6 +74,7 @@ std::unique_ptr<CommunityModel> get_community(pqxx::connection& db, const std::s
 std::unique_ptr<CommunityModel> CommunityModel::get_community_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 	return get_community(db, "id", id, throw_when_null);
 }
+
 std::unique_ptr<CommunityModel> CommunityModel::get_community_by_code(pqxx::connection& db, const std::string& code, bool throw_when_null) {
 	return get_community(db, "code", code, throw_when_null);
 }

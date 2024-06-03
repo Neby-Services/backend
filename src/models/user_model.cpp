@@ -1,9 +1,6 @@
 #include <models/user_model.h>
 
-UserModel::UserModel() : _id("") {}
-UserModel::UserModel(std::string id, std::string username) : _id(id), _username(username) {}
-
-UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at) {}
+UserModel::UserModel(std::string id, std::string community_id, std::string username, std::string email, std::string type, int balance, std::string created_at, std::string updated_at, std::optional<CommunityModel> community) : _id(id), _community_id(community_id), _username(username), _email(email), _type(type), _balance(balance), _created_at(created_at), _updated_at(updated_at), _community(community) {}
 
 std::string UserModel::get_id() const { return _id; }
 std::string UserModel::get_community_id() const { return _community_id; }
@@ -13,6 +10,7 @@ std::string UserModel::get_type() const { return _type; }
 int UserModel::get_balance() const { return _balance; }
 std::string UserModel::get_created_at() const { return _created_at; }
 std::string UserModel::get_updated_at() const { return _updated_at; }
+std::optional<CommunityModel> UserModel::get_community() { return _community; }
 
 std::unique_ptr<UserModel> UserModel::create_user(pqxx::connection& db, const std::string& community_id, const std::string& username, const std::string& email, const std::string& password, const std::string& type, const int balance, bool throw_when_null) {
 	pqxx::work txn(db);
@@ -36,20 +34,20 @@ std::unique_ptr<UserModel> UserModel::create_user(pqxx::connection& db, const st
 		result[0]["type"].as<std::string>(),
 		result[0]["balance"].as<int>(),
 		result[0]["created_at"].as<std::string>(),
-		result[0]["updated_at"].as<std::string>());
+		result[0]["updated_at"].as<std::string>(), std::nullopt);
 }
 
-std::vector<std::unique_ptr<UserModel>> UserModel::get_users(pqxx::connection& db) {
-	std::vector<std::unique_ptr<UserModel>> all_users;
+std::vector<UserModel> UserModel::get_users_admin(pqxx::connection& db, const std::string& admin_community_id) {
+	std::vector<UserModel> all_users;
 
 	pqxx::work txn(db);
 
-	pqxx::result result = txn.exec("SELECT id, community_id, username, email, type, balance, created_at, updated_at FROM users");
+	pqxx::result result = txn.exec_params("SELECT id, community_id, username, email, type, balance, created_at, updated_at FROM users WHERE community_id = $1", admin_community_id);
 
 	txn.commit();
 
 	for (const auto& row : result) {
-		all_users.push_back(std::make_unique<UserModel>(
+		all_users.push_back(UserModel(
 			row["id"].as<std::string>(),
 			row["community_id"].as<std::string>(),
 			row["username"].as<std::string>(),
@@ -57,22 +55,18 @@ std::vector<std::unique_ptr<UserModel>> UserModel::get_users(pqxx::connection& d
 			row["type"].as<std::string>(),
 			row["balance"].as<int>(),
 			row["created_at"].as<std::string>(),
-			row["updated_at"].as<std::string>()));
+			row["updated_at"].as<std::string>(), std::nullopt));
 	}
 
 	return all_users;
 }
 
 bool exists_user(pqxx::connection& db, const std::string& column, const std::string& value) {
-	try {
-		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params(std::format("SELECT id FROM users WHERE {} = $1", column), value);
-		txn.commit();
-		bool userExists = !result.empty() && !result[0][0].is_null();
-		return userExists;
-	} catch (const std::exception& e) {
-		return false;
-	}
+	pqxx::work txn(db);
+	pqxx::result result = txn.exec_params(std::format("SELECT id FROM users WHERE {} = $1", column), value);
+	txn.commit();
+	bool userExists = !result.empty() && !result[0][0].is_null();
+	return userExists;
 }
 
 bool UserModel::exists_id(pqxx::connection& db, const std::string& id) {
@@ -87,7 +81,13 @@ bool UserModel::exists_email(pqxx::connection& db, const std::string& email) {
 
 std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& column, const std::string& value, bool throw_when_null) {
 	pqxx::work txn(db);
-	pqxx::result result = txn.exec_params(std::format("SELECT id, community_id, username, email, type, balance, created_at, updated_at FROM users WHERE {} = $1", column), value);
+	pqxx::result result = txn.exec_params(
+		std::format(
+			"SELECT users.id, users.community_id, users.username, users.email, users.type, users.balance, users.created_at, users.updated_at, "
+			"communities.id AS community_id, communities.name AS community_name, communities.code AS community_code, communities.created_at AS community_created_at, communities.updated_at AS community_updated_at "
+			"FROM users "
+			"JOIN communities ON users.community_id = communities.id "
+			"WHERE users.{} = $1", column), value);
 	txn.commit();
 
 	if (result.empty()) {
@@ -97,6 +97,14 @@ std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& col
 			return nullptr;
 	}
 
+	CommunityModel community(
+		result[0]["community_id"].as<std::string>(),
+		result[0]["community_name"].as<std::string>(),
+		result[0]["community_code"].as<std::string>(),
+		result[0]["community_created_at"].as<std::string>(),
+		result[0]["community_updated_at"].as<std::string>()
+	);
+
 	return std::make_unique<UserModel>(
 		result[0]["id"].as<std::string>(),
 		result[0]["community_id"].as<std::string>(),
@@ -105,7 +113,9 @@ std::unique_ptr<UserModel> get_user(pqxx::connection& db, const std::string& col
 		result[0]["type"].as<std::string>(),
 		result[0]["balance"].as<int>(),
 		result[0]["created_at"].as<std::string>(),
-		result[0]["updated_at"].as<std::string>());
+		result[0]["updated_at"].as<std::string>(),
+		community
+	);
 }
 
 std::unique_ptr<UserModel> UserModel::get_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
@@ -118,58 +128,73 @@ std::unique_ptr<UserModel> UserModel::get_user_by_email(pqxx::connection& db, co
 	return get_user(db, "email", email, throw_when_null);
 }
 
-std::string UserModel::get_password_by_email(pqxx::connection& db, const std::string& email) {
-	try {
-		pqxx::work txn(db);
-		pqxx::result result = txn.exec_params("SELECT password FROM users WHERE email = $1", email);
-		txn.commit();
-		if (result.empty()) return "";
-		return result[0]["password"].as<std::string>();
-	} catch (const std::exception& e) {
-		return "";
+std::string UserModel::get_password_by_email(pqxx::connection& db, const std::string& email, bool throw_when_null) {
+	pqxx::work txn(db);
+	pqxx::result result = txn.exec_params("SELECT password FROM users WHERE email = $1", email);
+	txn.commit();
+	if (result.empty()) {
+		if (throw_when_null)
+			throw data_not_found_exception("user with email not found");
+		else return "";
 	}
+	return result[0]["password"].as<std::string>();
 }
 
-bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id) {
-	try {
-		pqxx::work txn(db);
+bool UserModel::delete_user_by_id(pqxx::connection& db, const std::string& id, bool throw_when_null) {
 
-		pqxx::result result = txn.exec_params("DELETE FROM users WHERE id = $1 RETURNING id", id);
+	pqxx::work txn(db);
 
-		txn.commit();
+	pqxx::result result = txn.exec_params("DELETE FROM users WHERE id = $1 RETURNING id", id);
 
-		if (!result.empty() && !result[0][0].is_null()) return true;
+	txn.commit();
 
-		return false;
-	} catch (const std::exception& e) {
-		std::cerr << "Failed to delete user: " << e.what() << std::endl;
-		return false;
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw deletion_exception("nothing has been deleted, maybe no user found to delete");
+		else return false;
 	}
+
+	return !result.empty() && !result[0][0].is_null();
 }
 
-bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::string username, const std::string email, const std::string password) {
-	try {
-		pqxx::work txn(db);
-		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
-		if (email != "") pqxx::result result = txn.exec_params("UPDATE users SET email = $1 WHERE id = $2", email, id);
-		if (password != "") pqxx::result result = txn.exec_params("UPDATE users SET password = $1 WHERE id = $2", password, id);
-		txn.commit();
-		return true;
-	} catch (const std::exception& e) {
-		std::cerr << "Failed to update user: " << e.what() << std::endl;
-		return false;
-	}
-}
+bool UserModel::update_user_by_id(pqxx::connection& db, const std::string& id, const std::map<std::string, std::string>& update_fields, bool throw_when_null) {
+	if (update_fields.empty()) {
+		if (throw_when_null)
+			throw update_exception("nothing has been updated, there is no data to update");
+		else
+			return false;
+	} 
 
-bool UserModel::update_user_admin(pqxx::connection& db, const std::string& id, const std::string username, const int balance) {
-	try {
-		pqxx::work txn(db);
-		if (username != "") pqxx::result result = txn.exec_params("UPDATE users SET username = $1 WHERE id = $2", username, id);
-		if (!(balance < 0)) pqxx::result result = txn.exec_params("UPDATE users SET balance = $1 WHERE id = $2", balance, id);
-		txn.commit();
-		return true;
-	} catch (const std::exception& e) {
-		std::cerr << "Failed to update user: " << e.what() << std::endl;
-		return false;
+	pqxx::work txn(db);
+
+	std::string query = "UPDATE users SET ";
+	std::vector<std::string> updates;
+	std::vector<std::string> params;
+
+	int param_index = 1;
+	for (const auto& field : update_fields) {
+		updates.push_back(field.first + " = $" + std::to_string(param_index++));
+		params.push_back(field.second);
 	}
+
+	query += join_query_update(updates, ", ") + " WHERE id = $" + std::to_string(param_index);
+	params.push_back(id);
+
+	// Convert params to const char* array for exec_params
+	std::vector<const char*> c_params;
+	for (const auto& param : params) {
+		c_params.push_back(param.c_str());
+	}
+
+	// Ejecutar la consulta
+	pqxx::result result = txn.exec_params(query, pqxx::prepare::make_dynamic_params(c_params));
+	txn.commit();
+
+	if (result.affected_rows() == 0) {
+		if (throw_when_null)
+			throw update_exception("nothing has been updated, maybe no user found to update");
+		else return false;
+	}
+
+	return true;
 }

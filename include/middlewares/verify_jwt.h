@@ -15,4 +15,3 @@ struct VerifyJWT : crow::ILocalMiddleware {
 	void after_handle(crow::request& req, crow::response& res, context& ctx);
 };
 
-using NebyApp = crow::App<VerifyJWT>;

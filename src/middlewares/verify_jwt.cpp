@@ -1,8 +1,8 @@
 #include <middlewares/verify_jwt.h>
 
 void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& ctx) {
-	ConnectionPool& pool = ConnectionPool::getInstance(connection_string, 10);
-	auto conn = pool.getConnection();
+	ConnectionPool pool(connection_string, 1);
+	auto conn = pool.get_connection();
 	std::string token = get_token_cookie(req);
 
 	if (token == "") {
@@ -23,10 +23,16 @@ void VerifyJWT::before_handle(crow::request& req, crow::response& res, context& 
 		if (e.first == "id")
 			id = e.second.get<std::string>();
 	}
+	std::cout << "id: " << id << std::endl;
 
 	std::unique_ptr<UserModel> user = UserModel::get_user_by_id(*conn.get(), id);
 
-	pool.releaseConnection(conn);
+	if (!user) {
+		handle_error(res, "no authorizated", 403);
+		return;
+	}
+
+	pool.release_connection(conn);
 
 	if (req.body == "") {
 		crow::json::wvalue body;

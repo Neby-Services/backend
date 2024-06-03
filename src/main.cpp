@@ -4,7 +4,9 @@
 #include <routes/notification_routes.h>
 #include <routes/service_routes.h>
 #include <routes/user_routes.h>
-#include <utils/common.h>
+#include <routes/user_achievement_routes.h>
+#include <routes/rating_routes.h>
+#include <middlewares/index_middlewares.h>
 #include <cstdlib>
 #include <format>
 #include <iostream>
@@ -14,14 +16,18 @@
 int main() {
 	try {
 		NebyApp app;
+		ConnectionPool pool(connection_string, 5);
 
-		initialize_auth_routes(app);
-		initialize_user_routes(app);
-		initialize_service_routes(app);
-		initialize_notifications_routes(app);
+		initialize_auth_routes(app, pool);
+		initialize_user_routes(app, pool);
+		initialize_rating_routes(app, pool);
+		initialize_service_routes(app, pool);
+		initialize_notifications_routes(app, pool);
+		initialize_user_achievement_routes(app, pool);
 
 		app.port(HTTP_PORT).multithreaded().run();
-	} catch (const std::exception &e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
 		exit(1);
 	}
